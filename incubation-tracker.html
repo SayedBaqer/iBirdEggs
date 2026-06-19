@@ -19,10 +19,10 @@
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);height:100%;overflow:hidden;}
-  body{position:fixed;inset:0;width:100%;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);-webkit-font-smoothing:antialiased;overscroll-behavior:none;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);height:100%;width:100%;overflow:hidden;}
+  body{position:fixed;inset:0;width:100%;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:pan-y;}
   [dir=rtl]{font-family:var(--sans);}
-  .wrap{max-width:680px;margin:0 auto;padding:0 16px 96px;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  .wrap{max-width:680px;margin:0 auto;padding:0 16px 96px;height:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
   header{padding:18px 0 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:linear-gradient(var(--bg),var(--bg) 72%,rgba(22,17,12,0));z-index:30;}
   .toprow{display:flex;align-items:center;justify-content:space-between;gap:10px;}
   .brand{display:flex;align-items:center;gap:11px;min-width:0;}
@@ -72,7 +72,7 @@
   .empty b{color:var(--ink);display:block;font-size:15px;margin-bottom:6px;}
 
   /* fullscreen overlays */
-  .screen{position:fixed;inset:0;background:var(--bg);z-index:60;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:none;}
+  .screen{position:fixed;inset:0;background:var(--bg);z-index:60;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:none;}
   .screen.open{display:block;}
   .swrap{max-width:680px;margin:0 auto;padding:0 16px calc(44px + env(safe-area-inset-bottom));}
   .shead{position:sticky;top:0;background:var(--bg);padding:calc(16px + env(safe-area-inset-top)) 0 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);z-index:5;}
@@ -132,8 +132,9 @@
 
   .modal{position:fixed;inset:0;background:rgba(8,5,2,.72);z-index:80;display:none;align-items:flex-end;justify-content:center;}
   .modal.open{display:flex;}
-  .sheet{background:var(--bg2);width:100%;max-width:680px;border-radius:20px 20px 0 0;border-top:1px solid var(--line);padding:8px 18px calc(24px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  .sheet{position:relative;background:var(--bg2);width:100%;max-width:680px;border-radius:20px 20px 0 0;border-top:1px solid var(--line);padding:8px 18px calc(24px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
   .grab{width:38px;height:4px;background:var(--line);border-radius:2px;margin:8px auto 14px;}
+  .sheetclose{position:absolute;top:14px;inset-inline-end:14px;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:50%;width:32px;height:32px;font-size:14px;display:flex;align-items:center;justify-content:center;z-index:1;}
   .sheet h3{margin:0 0 4px;font-size:17px;}
   .sheet .hint{font-size:12px;color:var(--muted);margin:0 0 14px;line-height:1.5;}
   label{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:13px 0 6px;}
@@ -255,6 +256,7 @@
 <!-- INCUBATOR MODAL -->
 <div class="modal" id="incModal">
   <div class="sheet">
+    <button class="sheetclose" onclick="closeModal('incModal')">✕</button>
     <div class="grab"></div>
     <h3 id="incModalTitle">—</h3>
     <label id="l_incName"></label><input id="fi_name">
@@ -277,6 +279,7 @@
 <!-- EGG MODAL -->
 <div class="modal" id="eggModal">
   <div class="sheet">
+    <button class="sheetclose" onclick="closeModal('eggModal')">✕</button>
     <div class="grab"></div>
     <h3 id="eggModalTitle">—</h3>
     <p class="hint" id="t_eggHint"></p>
@@ -313,6 +316,7 @@
 <!-- MEASURE MODAL -->
 <div class="modal" id="measModal">
   <div class="sheet">
+    <button class="sheetclose" onclick="closeModal('measModal')">✕</button>
     <div class="grab"></div>
     <h3 id="t_measTitle"></h3>
     <p class="hint" id="measHint"></p>
