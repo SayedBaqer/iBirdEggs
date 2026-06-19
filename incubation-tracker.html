@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DryDown">
+<meta name="theme-color" content="#16110c">
+<title>Dry-Down · Egg Incubation Tracker</title>
+<style>
+  :root{
+    --bg:#16110c; --bg2:#1f1812; --panel:#241c14; --shell:#f3e9d6; --shell-ink:#2a2118;
+    --ink:#efe3cf; --muted:#a99a83; --line:#3a2e22;
+    --heat:#f0a02a; --heat-d:#c97c14; --water:#3fb6ac; --water-d:#2c8c84;
+    --ok:#7bbf6a; --fast:#e7724a; --slow:#5aa9d6;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);}
+  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);-webkit-font-smoothing:antialiased;}
+  [dir=rtl]{font-family:var(--sans);}
+  .wrap{max-width:680px;margin:0 auto;padding:0 16px 96px;}
+  header{padding:18px 0 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:linear-gradient(var(--bg),var(--bg) 72%,rgba(22,17,12,0));z-index:30;}
+  .toprow{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .brand{display:flex;align-items:center;gap:11px;min-width:0;}
+  .glyph{width:30px;height:38px;flex:none;}
+  h1{font-size:18px;letter-spacing:.16em;font-weight:700;margin:0;text-transform:uppercase;}
+  [dir=rtl] h1{letter-spacing:0;}
+  .tag{font-size:10.5px;letter-spacing:.30em;color:var(--heat);text-transform:uppercase;margin-top:2px;font-weight:600;}
+  [dir=rtl] .tag{letter-spacing:0;}
+  .toggles{display:flex;gap:7px;flex:none;}
+  .chip{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:9px;height:38px;min-width:38px;padding:0 11px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;}
+  .chip.on{color:var(--heat);border-color:var(--heat-d);}
+  .sub{font-size:12px;color:var(--muted);margin-top:9px;line-height:1.5;}
+
+  .summary{display:flex;gap:8px;margin:16px 0 4px;}
+  .sumcard{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:11px 12px;}
+  .sumcard .n{font-family:var(--mono);font-size:23px;font-weight:600;line-height:1;}
+  .sumcard .l{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:6px;}
+  [dir=rtl] .sumcard .l{letter-spacing:0;}
+  .sumcard.alert .n{color:var(--fast);}
+
+  button{font-family:var(--sans);cursor:pointer;border:none;}
+  .row-actions{display:flex;gap:9px;margin:16px 0 6px;}
+  .btn{background:var(--heat);color:#251603;font-weight:700;border-radius:11px;padding:13px 16px;font-size:14px;flex:1;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .btn:active{transform:translateY(1px);}
+  .btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:600;flex:none;padding:13px 14px;}
+
+  .egg{background:var(--shell);color:var(--shell-ink);border-radius:16px;padding:15px 16px;margin:11px 0;position:relative;overflow:hidden;}
+  .egg:active{filter:brightness(.97);}
+  .egg .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .egg .name{font-size:16px;font-weight:700;}
+  .egg .sp{font-size:11.5px;color:#8a7a5f;margin-top:2px;}
+  .pill{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:5px 9px;border-radius:999px;white-space:nowrap;flex:none;}
+  [dir=rtl] .pill{letter-spacing:0;}
+  .pill.ok{background:rgba(123,191,106,.18);color:#3f7a31;}
+  .pill.fast{background:rgba(231,114,74,.16);color:#b0431f;}
+  .pill.slow{background:rgba(90,169,214,.16);color:#2a6c93;}
+  .pill.wait{background:rgba(170,154,131,.18);color:#7a6a51;}
+  .egg .metaline{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;}
+  .egg .metaline .m{font-size:11px;color:#7c6c52;}
+  .egg .metaline .m b{display:block;font-family:var(--mono);font-size:15px;color:var(--shell-ink);font-weight:600;margin-top:1px;}
+  .egg .due{margin-top:11px;font-size:11px;font-weight:700;color:#b0431f;display:flex;align-items:center;gap:5px;}
+  .egg .due.future{color:#8a7a5f;font-weight:600;}
+  .egg .prog{height:5px;border-radius:3px;background:rgba(42,33,24,.12);margin-top:11px;overflow:hidden;}
+  .egg .prog i{display:block;height:100%;background:var(--heat-d);border-radius:3px;}
+
+  .empty{border:1px dashed var(--line);border-radius:16px;padding:34px 20px;text-align:center;color:var(--muted);margin-top:18px;}
+  .empty b{color:var(--ink);display:block;font-size:15px;margin-bottom:6px;}
+
+  /* fullscreen overlays */
+  .screen{position:fixed;inset:0;background:var(--bg);z-index:60;overflow-y:auto;display:none;}
+  .screen.open{display:block;}
+  .swrap{max-width:680px;margin:0 auto;padding:0 16px calc(44px + env(safe-area-inset-bottom));}
+  .shead{position:sticky;top:0;background:var(--bg);padding:16px 0 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);z-index:5;}
+  .back{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;width:40px;height:40px;font-size:20px;flex:none;}
+  [dir=rtl] .back{transform:scaleX(-1);}
+  .stitle{flex:1;min-width:0;}
+  .stitle h2{margin:0;font-size:18px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .stitle .sp{font-size:12px;color:var(--muted);margin-top:2px;}
+  .iconbtn{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:10px;width:40px;height:40px;font-size:16px;flex:none;}
+
+  .verdict{border-radius:16px;padding:16px;margin:16px 0;border:1px solid var(--line);background:var(--panel);}
+  .verdict .big{font-size:15px;font-weight:800;display:flex;align-items:center;gap:9px;}
+  .verdict .dot{width:11px;height:11px;border-radius:50%;flex:none;}
+  .verdict .act{font-size:13.5px;margin-top:9px;line-height:1.55;color:var(--ink);}
+  .verdict .act b{font-weight:700;}
+  .verdict .temp{font-size:12.5px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);color:var(--muted);line-height:1.5;}
+  .verdict .temp b{color:var(--ink);}
+  .v-ok{border-color:rgba(123,191,106,.4);} .v-ok .dot{background:var(--ok);} .v-ok .big{color:var(--ok);}
+  .v-fast{border-color:rgba(231,114,74,.45);} .v-fast .dot{background:var(--fast);} .v-fast .big{color:var(--fast);}
+  .v-slow{border-color:rgba(90,169,214,.45);} .v-slow .dot{background:var(--slow);} .v-slow .big{color:var(--slow);}
+  .v-wait{border-color:var(--line);} .v-wait .dot{background:var(--muted);} .v-wait .big{color:var(--muted);}
+
+  .chartcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 12px 6px;margin:14px 0;}
+  .chart-h{padding:0 4px 8px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+  [dir=rtl] .chart-h{letter-spacing:0;}
+  .legend{display:flex;gap:13px;flex-wrap:wrap;padding:8px 4px 4px;}
+  .legend span{font-size:10.5px;color:var(--muted);display:flex;align-items:center;gap:5px;}
+  .legend i{width:13px;height:3px;border-radius:2px;display:inline-block;}
+  .legend i.band{height:9px;border-radius:2px;}
+  canvas{width:100%;display:block;direction:ltr;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:12px 13px;}
+  .stat .l{font-size:10px;letter-spacing:.10em;text-transform:uppercase;color:var(--muted);}
+  [dir=rtl] .stat .l{letter-spacing:0;}
+  .stat .v{font-family:var(--mono);font-size:19px;font-weight:600;margin-top:5px;}
+  .stat .v small{font-size:12px;color:var(--muted);font-weight:500;}
+  .stat.heat .v{color:var(--heat);} .stat.water .v{color:var(--water);}
+
+  .sectionlabel{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:22px 4px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  [dir=rtl] .sectionlabel{letter-spacing:0;}
+  .sectionlabel .acts{display:flex;gap:14px;}
+  .sectionlabel button{background:none;color:var(--heat);font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:right;padding:6px 8px;font-weight:600;}
+  [dir=rtl] th{letter-spacing:0;}
+  th.l,td.l{text-align:left;}
+  [dir=rtl] th{text-align:left;} [dir=rtl] th.l{text-align:right;}
+  [dir=rtl] td{text-align:left;} [dir=rtl] td.l{text-align:right;}
+  td{padding:9px 8px;border-top:1px solid var(--line);font-family:var(--mono);text-align:right;font-size:13px;}
+  td.l{font-family:var(--sans);}
+  .dev.up{color:var(--fast);} .dev.down{color:var(--slow);} .dev.on{color:var(--ok);}
+  .delrow{color:var(--fast);background:none;font-size:15px;padding:2px 4px;}
+  .timeline{font-size:12.5px;color:var(--muted);line-height:1.85;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 15px;}
+  .timeline b{color:var(--ink);font-family:var(--mono);}
+
+  .modal{position:fixed;inset:0;background:rgba(8,5,2,.72);z-index:80;display:none;align-items:flex-end;justify-content:center;}
+  .modal.open{display:flex;}
+  .sheet{background:var(--bg2);width:100%;max-width:680px;border-radius:20px 20px 0 0;border-top:1px solid var(--line);padding:8px 18px calc(24px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;}
+  .grab{width:38px;height:4px;background:var(--line);border-radius:2px;margin:8px auto 14px;}
+  .sheet h3{margin:0 0 4px;font-size:17px;}
+  .sheet .hint{font-size:12px;color:var(--muted);margin:0 0 14px;line-height:1.5;}
+  label{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:13px 0 6px;}
+  [dir=rtl] label{letter-spacing:0;}
+  input,select,textarea{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:11px;padding:13px;font-size:16px;font-family:var(--sans);}
+  input[type=number]{font-family:var(--mono);}
+  .two{display:flex;gap:10px;} .two>div{flex:1;}
+  .seg{display:flex;gap:6px;margin-top:6px;}
+  .seg button{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:11px 6px;font-size:13px;font-weight:600;}
+  .seg button.on{background:var(--heat);color:#251603;border-color:var(--heat);}
+  .savebtn{width:100%;background:var(--heat);color:#251603;font-weight:800;border-radius:12px;padding:15px;font-size:15px;margin-top:20px;}
+  .delbtn{width:100%;background:transparent;border:1px solid rgba(231,114,74,.5);color:var(--fast);border-radius:12px;padding:13px;font-weight:700;margin-top:10px;}
+  .toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--shell);color:var(--shell-ink);padding:11px 18px;border-radius:999px;font-size:13px;font-weight:600;z-index:120;opacity:0;transition:opacity .25s, transform .25s;pointer-events:none;max-width:90%;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+  .foot{text-align:center;font-size:11px;color:#6b5e49;margin-top:26px;line-height:1.6;}
+
+  /* info page */
+  .info h3{font-size:15px;margin:24px 0 8px;color:var(--heat);}
+  .info p{font-size:13.5px;line-height:1.65;color:var(--ink);margin:0 0 11px;}
+  .info ul{margin:0 0 12px;padding-inline-start:20px;}
+  .info li{font-size:13.5px;line-height:1.6;color:var(--ink);margin-bottom:7px;}
+  .info .note{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:13px;color:var(--muted);line-height:1.6;margin:6px 0 12px;}
+  .info b{color:var(--ink);}
+  .srctable{width:100%;border-collapse:collapse;margin-top:6px;}
+  .srctable td{font-family:var(--sans);border-top:1px solid var(--line);padding:10px 6px;font-size:12.5px;text-align:left;vertical-align:top;}
+  [dir=rtl] .srctable td{text-align:right;}
+  .srctable a{color:var(--water);word-break:break-word;}
+  .ref{display:inline-block;min-width:22px;color:var(--heat);font-weight:700;font-family:var(--mono);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="toprow">
+      <div class="brand">
+        <div class="glyph">
+          <svg width="30" height="38" viewBox="0 0 30 38" fill="none">
+            <path d="M15 1C8 1 2 13 2 23a13 13 0 0 0 26 0C28 13 22 1 15 1Z" fill="#f0a02a" opacity=".16"/>
+            <path d="M15 1C8 1 2 13 2 23a13 13 0 0 0 26 0C28 13 22 1 15 1Z" stroke="#f0a02a" stroke-width="1.6"/>
+            <path d="M6 27c4 2.4 6.5-2 9-2s5.5 4 9 1.4" stroke="#3fb6ac" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div><h1>Dry-Down</h1><div class="tag" id="t_tag"></div></div>
+      </div>
+      <div class="toggles">
+        <button class="chip" id="langBtn" onclick="toggleLang()">ع</button>
+        <button class="chip" onclick="openInfo()" id="infoBtn">ⓘ</button>
+      </div>
+    </div>
+    <p class="sub" id="t_sub"></p>
+  </header>
+
+  <div class="summary">
+    <div class="sumcard"><div class="n" id="sumActive">0</div><div class="l" id="t_sumActive"></div></div>
+    <div class="sumcard alert"><div class="n" id="sumAlert">0</div><div class="l" id="t_sumAlert"></div></div>
+    <div class="sumcard"><div class="n" id="sumDue">0</div><div class="l" id="t_sumDue"></div></div>
+  </div>
+
+  <div class="row-actions">
+    <button class="btn" onclick="openEgg()"><span style="font-size:17px;line-height:0">＋</span> <span id="t_newegg"></span></button>
+    <button class="btn ghost" onclick="exportData()" id="t_backup">⤓</button>
+    <button class="btn ghost" onclick="document.getElementById('importFile').click()">↺</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)">
+  </div>
+
+  <div id="list"></div>
+  <p class="foot" id="t_foot"></p>
+</div>
+
+<!-- DETAIL -->
+<div class="screen" id="detail">
+  <div class="swrap">
+    <div class="shead">
+      <button class="back" onclick="closeDetail()">‹</button>
+      <div class="stitle"><h2 id="dName">—</h2><div class="sp" id="dSp">—</div></div>
+      <button class="iconbtn" onclick="shareEgg()" title="Share">⤴</button>
+      <button class="iconbtn" onclick="openEgg(currentId)" title="Edit">✎</button>
+    </div>
+    <div id="detailBody"></div>
+  </div>
+</div>
+
+<!-- INFO -->
+<div class="screen" id="infoScreen">
+  <div class="swrap">
+    <div class="shead">
+      <button class="back" onclick="closeInfo()">‹</button>
+      <div class="stitle"><h2 id="t_infoTitle">—</h2></div>
+    </div>
+    <div class="info" id="infoBody"></div>
+  </div>
+</div>
+
+<!-- EGG MODAL -->
+<div class="modal" id="eggModal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <h3 id="eggModalTitle">—</h3>
+    <p class="hint" id="t_eggHint"></p>
+    <label id="l_name"></label><input id="f_name">
+    <label id="l_species"></label>
+    <select id="f_species" onchange="applySpecies()"></select>
+    <div class="two">
+      <div><label id="l_fresh"></label><input id="f_fresh" type="number" step="0.01" inputmode="decimal" placeholder="16.0"></div>
+      <div><label id="l_date"></label><input id="f_date" type="date"></div>
+    </div>
+    <div class="two">
+      <div><label id="l_days"></label><input id="f_days" type="number" step="1" inputmode="numeric"></div>
+      <div><label id="l_target"></label><input id="f_target" type="number" step="0.5" inputmode="decimal"></div>
+    </div>
+    <div class="two">
+      <div><label id="l_pip"></label><input id="f_pip" type="number" step="1" inputmode="numeric"></div>
+      <div><label id="l_temp"></label><input id="f_temp" type="number" step="0.1" inputmode="decimal" placeholder="37.5"></div>
+    </div>
+    <label id="l_sched"></label>
+    <div class="seg" id="schedSeg">
+      <button data-m="daily" onclick="setSched('daily')"></button>
+      <button data-m="everyN" onclick="setSched('everyN')"></button>
+      <button data-m="specific" onclick="setSched('specific')"></button>
+    </div>
+    <div id="schedExtra" style="margin-top:10px"></div>
+    <p class="hint" id="rhHint" style="margin-top:13px"></p>
+    <button class="savebtn" onclick="saveEgg()" id="t_saveEgg"></button>
+    <button class="delbtn" id="eggDelBtn" style="display:none" onclick="deleteEgg()"></button>
+  </div>
+</div>
+
+<!-- MEASURE MODAL -->
+<div class="modal" id="measModal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <h3 id="t_measTitle"></h3>
+    <p class="hint" id="measHint"></p>
+    <div class="two">
+      <div><label id="l_mweight"></label><input id="m_weight" type="number" step="0.01" inputmode="decimal"></div>
+      <div><label id="l_mdate"></label><input id="m_date" type="date"></div>
+    </div>
+    <div class="two">
+      <div><label id="l_mrh"></label><input id="m_rh" type="number" step="1" inputmode="numeric" placeholder="45"></div>
+      <div><label id="l_mtemp"></label><input id="m_temp" type="number" step="0.1" inputmode="decimal" placeholder="37.5"></div>
+    </div>
+    <label id="l_mnote"></label><input id="m_note">
+    <button class="savebtn" onclick="saveMeas()" id="t_saveMeas"></button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ============ i18n ============ */
+const T={
+ en:{
+  tag:"Egg Weight-Loss Tracker",
+  sub:"Weigh each egg, plot it against the ideal 15% loss line, and let the verdict tell you which way to move humidity (and when to touch temperature). Built for parrots & birds.",
+  sumActive:"Incubating", sumAlert:"Need adjust", sumDue:"Weigh today",
+  newegg:"New egg", backup:"Backup",
+  foot:"Weight loss = moisture loss. Target ≈ 15% (±3%) of fresh weight by internal pip, then lockdown. Data stays on this device — use Backup to save a copy.",
+  emptyT:"No eggs yet", emptyB:"Tap “New egg”, enter the fresh weight on setting day, then weigh on your chosen schedule.",
+  st_ok:"On target", st_fast:"Losing fast", st_slow:"Losing slow", st_wait:"Awaiting weigh-in", st_lock:"Lockdown",
+  day:"Day", weight:"Weight", lost:"Lost", targetNow:"Target now",
+  dueToday:"Weigh-in due today", dueOver:"Weigh-in overdue", dueNext:"Next weigh-in",
+  shouldToday:"Should weigh today", curWeight:"Current weight", lostSoFar:"Lost so far",
+  idealDaily:"Ideal daily loss", lastRH:"Last humidity", targetTemp:"Target temp", nextWeigh:"Next weigh-in",
+  band:"Acceptable band (±3%)", idealLine:"Ideal {x}% line", yourW:"Your weigh-ins",
+  chartT:"Weight loss vs incubation day",
+  holdTemp:"Hold ≈ {x}°C — humidity does the weight loss.",
+  pipLock:"Pip / lockdown ≈ day {d} ({date}) — raise RH to 65–70%.",
+  hatch:"Expected hatch ≈ day {d} ({date})", toGo:"{n} days to go.", overdue:"due / overdue.",
+  candle:"Candle around day {a} & day {b} to check the air cell.",
+  logT:"Weigh-in log", add:"Add", ics:"Reminders", vsIdeal:"vs ideal", rh:"RH", noLogs:"No weigh-ins yet.",
+  holdSteady:"Hold humidity steady.", raiseH:"Raise humidity", lowerH:"Lower humidity",
+  onLine:"Right on the line ({s} vs ideal). <b>Hold humidity steady.</b> Projected loss at pip: <b>{p}%</b>.",
+  tooFast:"Lost <b>{o}% too much</b> — drying too fast. <b>Raise humidity</b> ~3–5%{rh} and re-weigh in 2–3 days. On this trend it hits <b>{p}%</b> by pip (want {t}%).",
+  tooSlow:"Lost <b>{o}% too little</b> — drying too slow. <b>Lower humidity</b> ~3–5%{rh} or open a vent, then re-weigh in 2–3 days. On this trend it reaches only <b>{p}%</b> by pip (want {t}%).",
+  rhFromTo:" (from {a}% → try {b}%)",
+  fastTemp:" Humidity is the main lever; only if RH is already maxed, a slightly higher temp shortens incubation (less time to lose) — change temp cautiously.",
+  slowTemp:" Humidity is the main lever; only if RH is already at minimum, a slightly lower temp lengthens incubation — change temp cautiously.",
+  overTarget:" ⚠️ Already past the {t}% total target — you can't undo lost water. Maximise humidity now (e.g. egg in a vented bag with damp sterile gauze, aired daily) to stop further loss.",
+  waitMsg:"Record the fresh weight on setting day, then weigh on schedule. The ideal egg should weigh <b>{w}g</b> today ({l}% lost).",
+  lockMsg:"Past pip day {p}. Stop turning and <b>raise humidity to 65–70%</b>. Weight now jumps as the chick breathes — that's normal, stop tracking loss.",
+  tHold:"<b>Temperature:</b> hold ≈ {t}°C. Reading {m}°C is on target.",
+  tWarm:"<b>Temperature {m}°C is warm</b> (+{d}°C). Risks early hatch & extra water loss — nudge air temp down ~0.2°C.",
+  tCool:"<b>Temperature {m}°C is cool</b> (−{d}°C). Hatch may lag — nudge air temp up ~0.2°C.",
+  tLate:"<b>Last third:</b> the embryo now makes its own heat. If the egg runs warm, drop air temp ~0.2–0.3°C to keep shell ≈ {t}°C.",
+  tLock:"<b>Hatcher:</b> set ≈ {h}°C (about 0.4°C below incubation) and RH 65–70%.",
+  status:"status", verdictDay:"day {d}",
+  // egg modal
+  eggNew:"New egg", eggEdit:"Edit egg",
+  eggHint:"Pick a species to auto-fill incubation days & target loss — override anything.",
+  nameL:"Label / ID", speciesL:"Species", freshL:"Fresh weight (g)", dateL:"Set date (day 0)",
+  daysL:"Incub. days", targetL:"Target loss %", pipL:"Pip day (loss target by)", tempL:"Set temp °C",
+  schedL:"Weigh-in schedule", schDaily:"Daily", schEvery:"Every N days", schSpecific:"Specific days",
+  everyLabel:"Every how many days", specificLabel:"Days (comma separated, e.g. 0,4,8,12)",
+  saveEgg:"Save egg", delEgg:"Delete this egg", confirmDel:"Delete this egg and all its weigh-ins?",
+  needFresh:"Enter the fresh weight", needDays:"Enter incubation days",
+  added:"Egg added", updated:"Egg updated", deleted:"Egg deleted",
+  // measure
+  editMeas:"Edit weigh-in", measTitle:"Add weigh-in", measHint:"Ideal weight today: <b>{w}g</b> ({l}% lost).",
+  mweightL:"Weight (g)", mdateL:"Date", mrhL:"Humidity % (opt)", mtempL:"Temp °C (opt)", mnoteL:"Note (opt)",
+  saveMeas:"Save weigh-in", needWeight:"Enter a weight", measSaved:"Weigh-in saved",
+  backupDone:"Backup downloaded", restored:"Restored {n} eggs", badFile:"Could not read file",
+  icsDone:"Reminders file downloaded", copied:"Summary copied", shareBtn:"Share",
+  // info
+  infoTitle:"How it works & sources",
+ },
+ ar:{
+  tag:"متتبّع فقدان وزن البيض",
+  sub:"زِن كل بيضة وقارنها بخط الفقدان المثالي (15٪)، ودَع التقييم يخبرك باتجاه ضبط الرطوبة (ومتى تلمس الحرارة). مُصمَّم للببغاوات والطيور.",
+  sumActive:"تحت التحضين", sumAlert:"تحتاج ضبطًا", sumDue:"وزن اليوم",
+  newegg:"بيضة جديدة", backup:"نسخة احتياطية",
+  foot:"فقدان الوزن = فقدان الرطوبة. الهدف ≈ 15٪ (±3٪) من الوزن الطازج حتى النقر الداخلي، ثم الإغلاق. تبقى البيانات على هذا الجهاز — استخدم النسخ الاحتياطي للحفظ.",
+  emptyT:"لا توجد بيضات بعد", emptyB:"اضغط «بيضة جديدة»، أدخل الوزن الطازج يوم الوضع، ثم زِنها حسب الجدول الذي تختاره.",
+  st_ok:"على الهدف", st_fast:"فقدان سريع", st_slow:"فقدان بطيء", st_wait:"بانتظار الوزن", st_lock:"الإغلاق",
+  day:"اليوم", weight:"الوزن", lost:"المفقود", targetNow:"الهدف الآن",
+  dueToday:"موعد الوزن اليوم", dueOver:"تأخّر موعد الوزن", dueNext:"الوزن القادم",
+  shouldToday:"الوزن المتوقع اليوم", curWeight:"الوزن الحالي", lostSoFar:"المفقود حتى الآن",
+  idealDaily:"الفقد اليومي المثالي", lastRH:"آخر رطوبة", targetTemp:"الحرارة المستهدفة", nextWeigh:"الوزن القادم",
+  band:"النطاق المقبول (±3٪)", idealLine:"خط {x}٪ المثالي", yourW:"أوزانك",
+  chartT:"فقدان الوزن مقابل يوم التحضين",
+  holdTemp:"ثبّت الحرارة ≈ {x}°م — الرطوبة هي ما يضبط الفقد.",
+  pipLock:"النقر/الإغلاق ≈ اليوم {d} ({date}) — ارفع الرطوبة إلى 65–70٪.",
+  hatch:"الفقس المتوقع ≈ اليوم {d} ({date})", toGo:"باقٍ {n} يوم.", overdue:"حان/تأخّر.",
+  candle:"افحص بالضوء حوالي اليوم {a} واليوم {b} لمراقبة الغرفة الهوائية.",
+  logT:"سجل الأوزان", add:"إضافة", ics:"تذكيرات", vsIdeal:"مقابل المثالي", rh:"الرطوبة", noLogs:"لا أوزان بعد.",
+  holdSteady:"حافظ على الرطوبة ثابتة.", raiseH:"ارفع الرطوبة", lowerH:"اخفض الرطوبة",
+  onLine:"على الخط تمامًا ({s} عن المثالي). <b>حافظ على الرطوبة ثابتة.</b> الفقد المتوقع عند النقر: <b>{p}٪</b>.",
+  tooFast:"فقدت <b>{o}٪ زيادة</b> — يجف بسرعة. <b>ارفع الرطوبة</b> ~3–5٪{rh} وأعد الوزن خلال 2–3 أيام. بهذا المعدل يصل إلى <b>{p}٪</b> عند النقر (المطلوب {t}٪).",
+  tooSlow:"فقدت <b>{o}٪ أقل من اللازم</b> — يجف ببطء. <b>اخفض الرطوبة</b> ~3–5٪{rh} أو افتح فتحة تهوية، ثم أعد الوزن خلال 2–3 أيام. بهذا المعدل لا يبلغ سوى <b>{p}٪</b> عند النقر (المطلوب {t}٪).",
+  rhFromTo:" (من {a}٪ ← جرّب {b}٪)",
+  fastTemp:" الرطوبة هي الأداة الأساسية؛ وفقط إذا كانت الرطوبة في أقصاها، فإن رفع الحرارة قليلًا يقصّر التحضين (وقت أقل للفقد) — غيّر الحرارة بحذر.",
+  slowTemp:" الرطوبة هي الأداة الأساسية؛ وفقط إذا كانت الرطوبة في أدناها، فإن خفض الحرارة قليلًا يطيل التحضين — غيّر الحرارة بحذر.",
+  overTarget:" ⚠️ تجاوزت هدف الفقد الكلي {t}٪ — لا يمكن إعادة الماء المفقود. ارفع الرطوبة لأقصاها الآن (مثل وضع البيضة في كيس مثقوب مع شاش معقّم مبلّل، يُهوّى يوميًا) لإيقاف المزيد من الفقد.",
+  waitMsg:"سجّل الوزن الطازج يوم الوضع، ثم زِن حسب الجدول. يُفترض أن تزن البيضة المثالية <b>{w}غ</b> اليوم (فُقد {l}٪).",
+  lockMsg:"تجاوزت يوم النقر {p}. أوقف التقليب و<b>ارفع الرطوبة إلى 65–70٪</b>. يقفز الوزن الآن مع تنفّس الفرخ — هذا طبيعي، أوقف تتبّع الفقد.",
+  tHold:"<b>الحرارة:</b> ثبّت ≈ {t}°م. القراءة {m}°م على الهدف.",
+  tWarm:"<b>الحرارة {m}°م مرتفعة</b> (+{d}°م). تهدّد بفقس مبكر وفقد ماء زائد — اخفض حرارة الهواء ~0.2°م.",
+  tCool:"<b>الحرارة {m}°م منخفضة</b> (−{d}°م). قد يتأخر الفقس — ارفع حرارة الهواء ~0.2°م.",
+  tLate:"<b>الثلث الأخير:</b> يولّد الجنين حرارته الآن. إن ارتفعت حرارة البيضة، اخفض حرارة الهواء ~0.2–0.3°م لإبقاء القشرة ≈ {t}°م.",
+  tLock:"<b>الفقّاسة:</b> اضبط ≈ {h}°م (أقل بنحو 0.4°م من التحضين) ورطوبة 65–70٪.",
+  status:"الحالة", verdictDay:"اليوم {d}",
+  eggNew:"بيضة جديدة", eggEdit:"تعديل البيضة",
+  eggHint:"اختر النوع لملء أيام التحضين ونسبة الفقد تلقائيًا — يمكنك تعديل أي قيمة.",
+  nameL:"الاسم / المعرّف", speciesL:"النوع", freshL:"الوزن الطازج (غ)", dateL:"تاريخ الوضع (اليوم 0)",
+  daysL:"أيام التحضين", targetL:"نسبة الفقد ٪", pipL:"يوم النقر (هدف الفقد عنده)", tempL:"الحرارة °م",
+  schedL:"جدول الوزن", schDaily:"يوميًا", schEvery:"كل N يوم", schSpecific:"أيام محددة",
+  everyLabel:"كل كم يوم", specificLabel:"الأيام (مفصولة بفاصلة، مثل 0,4,8,12)",
+  saveEgg:"حفظ البيضة", delEgg:"حذف هذه البيضة", confirmDel:"حذف هذه البيضة وكل أوزانها؟",
+  needFresh:"أدخل الوزن الطازج", needDays:"أدخل أيام التحضين",
+  added:"أُضيفت البيضة", updated:"حُدّثت البيضة", deleted:"حُذفت البيضة",
+  editMeas:"تعديل الوزن", measTitle:"إضافة وزن", measHint:"الوزن المثالي اليوم: <b>{w}غ</b> (فُقد {l}٪).",
+  mweightL:"الوزن (غ)", mdateL:"التاريخ", mrhL:"الرطوبة ٪ (اختياري)", mtempL:"الحرارة °م (اختياري)", mnoteL:"ملاحظة (اختياري)",
+  saveMeas:"حفظ الوزن", needWeight:"أدخل الوزن", measSaved:"حُفظ الوزن",
+  backupDone:"تم تنزيل النسخة", restored:"تمت استعادة {n} بيضة", badFile:"تعذّر قراءة الملف",
+  icsDone:"تم تنزيل ملف التذكيرات", copied:"نُسخ الملخّص", shareBtn:"مشاركة",
+  infoTitle:"كيف يعمل والمصادر",
+ }
+};
+let lang = localStorage.getItem("drydown.lang") || "en";
+function t(k,vars){ let s=(T[lang]&&T[lang][k])||T.en[k]||k; if(vars) for(const v in vars) s=s.replaceAll("{"+v+"}",vars[v]); return s; }
+function isRTL(){ return lang==="ar"; }
+
+/* ============ species ============ */
+const SPECIES = [
+  {g:"— custom —", ar:"— مخصص —", d:24, l:15, k:"med"},
+  {g:"Budgerigar (Budgie)", ar:"بادجي (درّة أسترالية)", d:18, l:15, k:"small"},
+  {g:"Cockatiel", ar:"كوكتيل", d:19, l:15, k:"small"},
+  {g:"Lovebird", ar:"طيور الحب", d:23, l:15, k:"small"},
+  {g:"Parrotlet", ar:"ببغاء صغير (بارّوتلِت)", d:19, l:15, k:"small"},
+  {g:"Lineolated Parakeet", ar:"باراكيت لينيوليتد", d:21, l:15, k:"small"},
+  {g:"Indian Ringneck", ar:"درّة هندية (طوقية)", d:23, l:15, k:"med"},
+  {g:"Rosella", ar:"روزيلا", d:21, l:15, k:"med"},
+  {g:"Conure (green-cheek / med)", ar:"كونيور (متوسط)", d:24, l:15, k:"med"},
+  {g:"Conure (sun / jenday)", ar:"كونيور شمسي/جِنداي", d:26, l:15, k:"med"},
+  {g:"Quaker (Monk)", ar:"كويكر (راهب)", d:24, l:15, k:"med"},
+  {g:"Caique", ar:"كايكي", d:26, l:15, k:"med"},
+  {g:"Pionus", ar:"بيونوس", d:25, l:15, k:"med"},
+  {g:"Senegal / Poicephalus", ar:"سنغالي / بويسيفالوس", d:27, l:15, k:"med"},
+  {g:"Lory / Lorikeet", ar:"لوري / لوريكيت", d:25, l:16, k:"med-rf"},
+  {g:"Mini Macaw", ar:"مكاو صغير", d:24, l:15, k:"med"},
+  {g:"Macaw (large)", ar:"مكاو كبير", d:27, l:15, k:"large"},
+  {g:"African Grey", ar:"الرمادي الأفريقي (كاسكو)", d:28, l:15, k:"large"},
+  {g:"Amazon", ar:"أمازون", d:27, l:15, k:"large"},
+  {g:"Eclectus", ar:"إكلكتوس", d:28, l:15, k:"large-rf"},
+  {g:"Cockatoo (galah / med)", ar:"كوكاتو (متوسط)", d:25, l:15, k:"large"},
+  {g:"Cockatoo (umbrella / moluccan)", ar:"كوكاتو (مظلي/مولوكي)", d:28, l:17, k:"large"},
+  {g:"Canary", ar:"كناري", d:13, l:15, k:"tiny"},
+  {g:"Finch (zebra / society)", ar:"فينش (حسون الزرد)", d:14, l:15, k:"tiny"},
+  {g:"Dove / Pigeon", ar:"يمام / حمام", d:14, l:15, k:"small"},
+  {g:"Chicken (reference)", ar:"دجاج (مرجع)", d:21, l:13, k:"ref"},
+  {g:"Duck (reference)", ar:"بط (مرجع)", d:28, l:13, k:"ref"},
+  {g:"Quail · Coturnix (reference)", ar:"سمان/فرّي (مرجع)", d:17, l:13, k:"ref"},
+];
+function spName(g){ const s=SPECIES.find(x=>x.g===g); return s?(isRTL()?s.ar:s.g):g; }
+const RH_HINT_EN={tiny:"Tiny egg — start ~48–55% RH; thin shells lose fast.",small:"Small egg — start ~46–52% RH.",med:"Medium egg — start ~46–52% RH.","med-rf":"Rainforest species — start a touch higher ~50–58% RH.",large:"Large / thick shell — start lower ~38–45% RH.","large-rf":"Large rainforest egg — start ~40–48% RH.",ref:"Poultry reference — ~45–50% RH, lockdown 65%+."};
+const RH_HINT_AR={tiny:"بيضة صغيرة جدًا — ابدأ ~48–55٪ رطوبة؛ القشرة الرقيقة تفقد بسرعة.",small:"بيضة صغيرة — ابدأ ~46–52٪ رطوبة.",med:"بيضة متوسطة — ابدأ ~46–52٪ رطوبة.","med-rf":"نوع غابات مطيرة — ابدأ أعلى قليلًا ~50–58٪.",large:"بيضة كبيرة/قشرة سميكة — ابدأ أخفض ~38–45٪.","large-rf":"بيضة غابات كبيرة — ابدأ ~40–48٪.",ref:"مرجع الدواجن — ~45–50٪، الإغلاق 65٪+."};
+const RH_NOTE_EN="RH numbers are starting points only — every incubator reads differently. The egg's weight is the real instrument.";
+const RH_NOTE_AR="أرقام الرطوبة نقطة بداية فقط — كل حاضنة تقرأ بشكل مختلف. وزن البيضة هو المقياس الحقيقي.";
+
+/* ============ storage ============ */
+const KEY="drydown.eggs.v1";
+let eggs=load(), currentId=null, editId=null, measEggId=null, measEditId=null, schedDraft={mode:"everyN",n:3,days:[0,4,8,12]};
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY))||[] }catch(e){ return [] } }
+function save(){ localStorage.setItem(KEY, JSON.stringify(eggs)); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+/* ============ dates ============ */
+function today(){ return new Date().toISOString().slice(0,10); }
+function parseD(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function fmtD(s){ if(!s) return "—"; return parseD(s).toLocaleDateString(isRTL()?"ar":undefined,{day:"numeric",month:"short"}); }
+function addDays(s,n){ const d=parseD(s); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function dayDiff(a,b){ return Math.round((parseD(b)-parseD(a))/86400000); }
+
+/* ============ math ============ */
+function targetLossAt(e,tday){ const p=e.pip||e.days; return e.target*Math.min(Math.max(tday,0),p)/p; }
+function targetWeightAt(e,tday){ return e.fresh*(1-targetLossAt(e,tday)/100); }
+function lossPct(e,w){ return (e.fresh-w)/e.fresh*100; }
+
+function scheduleDays(e){
+  const p=e.pip||e.days, s=e.schedule||{mode:"everyN",n:3};
+  let arr=[];
+  if(s.mode==="daily"){ for(let d=0; d<=p; d++) arr.push(d); }
+  else if(s.mode==="specific"){ arr=(s.days||[]).filter(d=>d>=0&&d<=e.days); }
+  else { const n=Math.max(1,s.n||3); for(let d=0; d<=p; d+=n) arr.push(d); }
+  return arr.sort((a,b)=>a-b);
+}
+function nextWeighDay(e){
+  const ms=[...e.meas].map(m=>dayDiff(e.setDate,m.date));
+  const last=ms.length?Math.max(...ms):-1;
+  const sched=scheduleDays(e);
+  for(const d of sched){ if(d>last) return d; }
+  return null;
+}
+
+function analyse(e){
+  const ms=[...e.meas].sort((a,b)=>a.date<b.date?-1:1);
+  const tD=today(), elapsed=dayDiff(e.setDate,tD), p=e.pip||e.days;
+  const out={elapsed,p,ms,
+    hatchDate:addDays(e.setDate,e.days), pipDate:addDays(e.setDate,p),
+    daysLeft:e.days-elapsed,
+    targetWeightToday:targetWeightAt(e,Math.min(elapsed,p)),
+    targetLossToday:targetLossAt(e,Math.min(elapsed,p)),
+    dailyG:e.fresh*(e.target/100)/p, status:"wait",
+    hatcherTemp:Math.max(36.6,(e.temp||37.5)-0.4)};
+  const nd=nextWeighDay(e);
+  out.nextDay=nd; out.nextDate=nd==null?null:addDays(e.setDate,nd);
+  out.due = nd!=null && nd<=elapsed && elapsed<=p;
+  if(ms.length){
+    const last=ms[ms.length-1], lt=dayDiff(e.setDate,last.date);
+    const aLoss=lossPct(e,last.weight), tLoss=targetLossAt(e,lt), dev=aLoss-tLoss;
+    const proj = lt>0 ? aLoss/lt*p : aLoss;
+    out.last=last; out.lastDay=lt; out.aLoss=aLoss; out.tLoss=tLoss; out.dev=dev; out.proj=proj;
+    out.lastRH=null; out.lastTemp=null;
+    for(let i=ms.length-1;i>=0;i--){ if(out.lastRH==null&&ms[i].rh!=null&&ms[i].rh!=="") out.lastRH=ms[i].rh; if(out.lastTemp==null&&ms[i].temp!=null&&ms[i].temp!=="") out.lastTemp=ms[i].temp; }
+    const tol=Math.max(1.0,0.12*Math.max(tLoss,1)); out.tol=tol;
+    if(lt>=p) out.status="lockdown";
+    else if(dev>tol) out.status="fast";
+    else if(dev<-tol) out.status="slow";
+    else out.status="ok";
+  }
+  return out;
+}
+const STC={ok:"ok",fast:"fast",slow:"slow",wait:"wait",lockdown:"wait"};
+function stLabel(s){ return {ok:t("st_ok"),fast:t("st_fast"),slow:t("st_slow"),wait:t("st_wait"),lockdown:t("st_lock")}[s]; }
+
+/* ============ static UI text ============ */
+function paintChrome(){
+  document.documentElement.lang=lang; document.documentElement.dir=isRTL()?"rtl":"ltr";
+  document.getElementById("langBtn").textContent = isRTL()?"EN":"ع";
+  const set=(id,k)=>{const el=document.getElementById(id); if(el) el.textContent=t(k);};
+  set("t_tag","tag"); set("t_sub","sub");
+  set("t_sumActive","sumActive"); set("t_sumAlert","sumAlert"); set("t_sumDue","sumDue");
+  set("t_newegg","newegg"); document.getElementById("t_backup").title=t("backup");
+  document.getElementById("t_foot").textContent=t("foot");
+  set("t_infoTitle","infoTitle");
+  // egg modal labels
+  set("l_name","nameL"); set("l_species","speciesL"); set("l_fresh","freshL"); set("l_date","dateL");
+  set("l_days","daysL"); set("l_target","targetL"); set("l_pip","pipL"); set("l_temp","tempL");
+  set("l_sched","schedL"); set("t_eggHint","eggHint"); set("t_saveEgg","saveEgg");
+  document.getElementById("eggDelBtn").textContent=t("delEgg");
+  const segs=document.querySelectorAll("#schedSeg button");
+  segs[0].textContent=t("schDaily"); segs[1].textContent=t("schEvery"); segs[2].textContent=t("schSpecific");
+  // measure modal
+  set("t_measTitle","measTitle"); set("l_mweight","mweightL"); set("l_mdate","mdateL");
+  set("l_mrh","mrhL"); set("l_mtemp","mtempL"); set("l_mnote","mnoteL"); set("t_saveMeas","saveMeas");
+}
+function toggleLang(){ lang=isRTL()?"en":"ar"; localStorage.setItem("drydown.lang",lang); paintChrome(); renderList();
+  if(document.getElementById("detail").classList.contains("open")&&currentId) openDetail(currentId);
+  if(document.getElementById("infoScreen").classList.contains("open")) renderInfo();
+}
+
+/* ============ list ============ */
+function renderList(){
+  const list=document.getElementById("list");
+  let active=0,alert=0,due=0;
+  if(!eggs.length){
+    list.innerHTML=`<div class="empty"><b>${t("emptyT")}</b>${t("emptyB")}</div>`;
+  } else {
+    list.innerHTML=eggs.map(e=>{
+      const a=analyse(e), cls=STC[a.status];
+      if(a.elapsed<=e.days+2) active++;
+      if(a.status==="fast"||a.status==="slow") alert++;
+      if(a.due) due++;
+      const pct=Math.max(0,Math.min(100,a.elapsed/e.days*100));
+      const curW=a.last?a.last.weight.toFixed(2)+"g":"—", curL=a.last?a.aLoss.toFixed(1)+"%":"—";
+      let dueLine="";
+      if(a.status!=="lockdown"&&a.nextDay!=null){
+        if(a.due){ const over=a.elapsed>a.nextDay; dueLine=`<div class="due">⏰ ${over?t("dueOver"):t("dueToday")}</div>`; }
+        else dueLine=`<div class="due future">○ ${t("dueNext")}: ${t("day").toLowerCase()} ${a.nextDay} · ${fmtD(a.nextDate)}</div>`;
+      }
+      return `<div class="egg" onclick="openDetail('${e.id}')">
+        <div class="top"><div><div class="name">${esc(e.name||"—")}</div><div class="sp">${esc(spName(e.species))} · ${e.days}${isRTL()?"ي":"d"}</div></div>
+          <div class="pill ${cls}">${stLabel(a.status)}</div></div>
+        <div class="metaline">
+          <div class="m">${t("day")}<b>${a.elapsed<0?0:a.elapsed} / ${e.days}</b></div>
+          <div class="m">${t("weight")}<b>${curW}</b></div>
+          <div class="m">${t("lost")}<b>${curL}</b></div>
+          <div class="m">${t("targetNow")}<b>${a.targetLossToday.toFixed(1)}%</b></div>
+        </div>${dueLine}
+        <div class="prog"><i style="width:${pct}%"></i></div></div>`;
+    }).join("");
+  }
+  document.getElementById("sumActive").textContent=active;
+  document.getElementById("sumAlert").textContent=alert;
+  document.getElementById("sumDue").textContent=due;
+}
+function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ============ detail ============ */
+function openDetail(id){
+  currentId=id; const e=eggs.find(x=>x.id===id); if(!e) return;
+  const a=analyse(e);
+  document.getElementById("dName").textContent=e.name||"—";
+  document.getElementById("dSp").textContent=`${spName(e.species)} · ${e.fresh}g · ${fmtD(e.setDate)}`;
+  document.getElementById("detailBody").innerHTML=verdictHTML(e,a)+gridHTML(e,a)+chartHTML(e)+timelineHTML(e,a)+tableHTML(e,a);
+  document.getElementById("detail").classList.add("open"); document.body.style.overflow="hidden";
+  requestAnimationFrame(()=>drawChart(e,a));
+}
+function closeDetail(){ document.getElementById("detail").classList.remove("open"); document.body.style.overflow=""; renderList(); }
+
+function tempBlock(e,a){
+  const tg=e.temp||37.5;
+  let parts=[];
+  if(a.status==="lockdown"||a.elapsed>=a.p){ parts.push(t("tLock",{h:a.hatcherTemp.toFixed(1)})); }
+  else {
+    if(a.lastTemp!=null){
+      const d=a.lastTemp-tg;
+      if(d>0.3) parts.push(t("tWarm",{m:a.lastTemp,d:d.toFixed(1)}));
+      else if(d<-0.3) parts.push(t("tCool",{m:a.lastTemp,d:Math.abs(d).toFixed(1)}));
+      else parts.push(t("tHold",{t:tg,m:a.lastTemp}));
+    } else parts.push(t("holdTemp",{x:tg}));
+    if(a.elapsed>=Math.round(e.days*0.66)) parts.push(t("tLate",{t:tg}));
+  }
+  return `<div class="temp">🌡 ${parts.join("<br>")}</div>`;
+}
+function verdictHTML(e,a){
+  if(a.status==="wait"){
+    return `<div class="verdict v-wait"><div class="big"><span class="dot"></span>${t("st_wait")}</div>
+      <div class="act">${t("waitMsg",{w:a.targetWeightToday.toFixed(2),l:a.targetLossToday.toFixed(1)})}</div>${tempBlock(e,a)}</div>`;
+  }
+  if(a.status==="lockdown"){
+    return `<div class="verdict v-wait"><div class="big"><span class="dot"></span>${t("st_lock")}</div>
+      <div class="act">${t("lockMsg",{p:a.p})}</div>${tempBlock(e,a)}</div>`;
+  }
+  const cls="v-"+STC[a.status]; let action;
+  const off=Math.abs(a.dev).toFixed(1);
+  const rhtxt=(delta)=>a.lastRH!=null?t("rhFromTo",{a:a.lastRH,b:Math.max(0,+a.lastRH+delta)}):"";
+  if(a.status==="ok") action=t("onLine",{s:(a.dev>=0?"+":"")+a.dev.toFixed(1),p:a.proj.toFixed(1)});
+  else if(a.status==="fast") action=t("tooFast",{o:off,rh:rhtxt(4),p:a.proj.toFixed(1),t:e.target})+(a.aLoss>=e.target?t("overTarget",{t:e.target}):"")+t("fastTemp");
+  else action=t("tooSlow",{o:off,rh:rhtxt(-4),p:a.proj.toFixed(1),t:e.target})+t("slowTemp");
+  return `<div class="verdict ${cls}"><div class="big"><span class="dot"></span>${stLabel(a.status)} · ${t("verdictDay",{d:a.lastDay})}</div>
+    <div class="act">${action}</div>${tempBlock(e,a)}</div>`;
+}
+function gridHTML(e,a){
+  return `<div class="grid">
+    <div class="stat"><div class="l">${t("day")}</div><div class="v">${a.elapsed<0?0:a.elapsed}<small> / ${e.days}</small></div></div>
+    <div class="stat"><div class="l">${t("shouldToday")}</div><div class="v">${a.targetWeightToday.toFixed(2)}<small>g</small></div></div>
+    <div class="stat"><div class="l">${t("curWeight")}</div><div class="v">${a.last?a.last.weight.toFixed(2):"—"}<small>g</small></div></div>
+    <div class="stat"><div class="l">${t("lostSoFar")}</div><div class="v">${a.last?a.aLoss.toFixed(1):"0.0"}<small>% · ${a.targetLossToday.toFixed(1)}%</small></div></div>
+    <div class="stat heat"><div class="l">${t("targetTemp")}</div><div class="v">${(e.temp||37.5).toFixed(1)}<small>°C</small></div></div>
+    <div class="stat water"><div class="l">${t("nextWeigh")}</div><div class="v">${a.nextDay==null?"—":a.nextDay}<small>${a.nextDay==null?"":" · "+fmtD(a.nextDate)}</small></div></div>
+  </div>`;
+}
+function chartHTML(e){
+  return `<div class="chartcard"><div class="chart-h">${t("chartT")}</div>
+    <canvas id="chart" height="220"></canvas>
+    <div class="legend">
+      <span><i class="band" style="background:rgba(123,191,106,.22)"></i>${t("band")}</span>
+      <span><i style="background:var(--heat)"></i>${t("idealLine",{x:e.target})}</span>
+      <span><i style="background:var(--shell)"></i>${t("yourW")}</span>
+    </div></div>`;
+}
+function timelineHTML(e,a){
+  const c1=Math.max(5,Math.round(e.days*0.27)), c2=Math.round(e.days*0.55);
+  const left=a.daysLeft>=0?t("toGo",{n:a.daysLeft}):t("overdue");
+  return `<div class="timeline">
+    🔥 ${t("holdTemp",{x:(e.temp||37.5)})}<br>
+    🥚 ${t("pipLock",{d:a.p,date:fmtD(a.pipDate)})}<br>
+    🐣 ${t("hatch",{d:e.days,date:fmtD(a.hatchDate)})} — ${left}<br>
+    🔦 ${t("candle",{a:c1,b:c2})}</div>`;
+}
+function tableHTML(e,a){
+  let rows=a.ms.map(m=>{
+    const d=dayDiff(e.setDate,m.date), al=lossPct(e,m.weight), tl=targetLossAt(e,d), dv=al-tl;
+    const dc=Math.abs(dv)<=(a.tol||1)?"on":(dv>0?"up":"down"), ar=dc==="on"?"●":(dv>0?"▲":"▼");
+    return `<tr onclick="openMeas('${e.id}','${m.id}')" style="cursor:pointer"><td class="l">${isRTL()?"ي":"d"}${d} · ${fmtD(m.date)}</td><td>${m.weight.toFixed(2)}g</td>
+      <td>${al.toFixed(1)}%</td><td><span class="dev ${dc}">${ar}${dv>=0?"+":""}${dv.toFixed(1)}</span></td>
+      <td>${m.rh!=null&&m.rh!==""?m.rh+"%":"·"}</td>
+      <td><button class="delrow" onclick="delMeas('${e.id}','${m.id}');event.stopPropagation()">✕</button></td></tr>`;
+  }).join("");
+  if(!a.ms.length) rows=`<tr><td class="l" colspan="6" style="color:var(--muted);font-family:var(--sans);text-align:center;padding:18px">${t("noLogs")}</td></tr>`;
+  return `<div class="sectionlabel">${t("logT")}<div class="acts">
+      <button onclick="exportICS('${e.id}')">⏰ ${t("ics")}</button>
+      <button onclick="openMeas('${e.id}')">＋ ${t("add")}</button></div></div>
+    <table><thead><tr><th class="l">${t("day")}</th><th>${t("weight")}</th><th>${t("lost")}</th><th>${t("vsIdeal")}</th><th>${t("rh")}</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+/* ============ chart ============ */
+function drawChart(e,a){
+  const cv=document.getElementById("chart"); if(!cv) return;
+  const dpr=window.devicePixelRatio||1, cssW=cv.clientWidth, cssH=220;
+  cv.width=cssW*dpr; cv.height=cssH*dpr; const x=cv.getContext("2d"); x.scale(dpr,dpr);
+  const W=cssW,H=cssH,pad={l:34,r:10,t:12,b:24}, p=a.p, D=e.days;
+  const maxLoss=Math.max(e.target+5,(a.last?lossPct(e,a.last.weight):0)+3);
+  const PX=d=>pad.l+(d/D)*(W-pad.l-pad.r), PY=v=>pad.t+(v/maxLoss)*(H-pad.t-pad.b);
+  x.clearRect(0,0,W,H);
+  x.strokeStyle="rgba(58,46,34,.6)"; x.fillStyle="#8a7a5f"; x.font="9px ui-monospace,monospace"; x.lineWidth=1;
+  for(let v=0; v<=maxLoss; v+=5){ const y=PY(v); x.beginPath(); x.moveTo(pad.l,y); x.lineTo(W-pad.r,y); x.stroke(); x.fillText(v+"%",4,y+3); }
+  const step=D>22?7:(D>14?5:3);
+  for(let d=0; d<=D; d+=step){ x.fillText(d,PX(d)-3,H-8); }
+  const lo=Math.max(0,e.target-3),hi=e.target+3;
+  x.fillStyle="rgba(123,191,106,.16)"; x.beginPath(); x.moveTo(PX(0),PY(0)); x.lineTo(PX(p),PY(hi)); x.lineTo(PX(p),PY(lo)); x.closePath(); x.fill();
+  x.setLineDash([3,3]); x.strokeStyle="rgba(63,182,172,.5)"; x.beginPath(); x.moveTo(PX(p),pad.t); x.lineTo(PX(p),H-pad.b); x.stroke();
+  x.fillStyle="#3fb6ac"; x.fillText("pip",PX(p)-7,pad.t+8); x.setLineDash([]);
+  if(a.elapsed>=0&&a.elapsed<=D){ x.setLineDash([2,4]); x.strokeStyle="rgba(239,227,207,.35)"; x.beginPath(); x.moveTo(PX(a.elapsed),pad.t); x.lineTo(PX(a.elapsed),H-pad.b); x.stroke(); x.setLineDash([]); }
+  x.strokeStyle="#f0a02a"; x.lineWidth=2; x.beginPath(); x.moveTo(PX(0),PY(0)); x.lineTo(PX(p),PY(e.target)); x.stroke();
+  const pts=a.ms.map(m=>({d:dayDiff(e.setDate,m.date),v:lossPct(e,m.weight)})).sort((u,w)=>u.d-w.d);
+  if(pts.length){
+    x.strokeStyle="rgba(243,233,214,.85)"; x.lineWidth=2; x.beginPath();
+    pts.forEach((pt,i)=>{ const px=PX(pt.d),py=PY(pt.v); i?x.lineTo(px,py):x.moveTo(px,py); }); x.stroke();
+    pts.forEach(pt=>{ x.beginPath(); x.fillStyle="#f3e9d6"; x.arc(PX(pt.d),PY(pt.v),3.4,0,7); x.fill(); x.lineWidth=1.5; x.strokeStyle="#16110c"; x.stroke(); });
+  }
+}
+
+/* ============ egg modal ============ */
+function fillSpecies(){ document.getElementById("f_species").innerHTML=SPECIES.map((s,i)=>`<option value="${i}">${isRTL()?s.ar:s.g}</option>`).join(""); }
+function applySpecies(){
+  const s=SPECIES[+document.getElementById("f_species").value];
+  document.getElementById("f_days").value=s.d;
+  document.getElementById("f_target").value=s.l;
+  document.getElementById("f_pip").value=Math.max(1,s.d-3);
+  rhHintShow(s.k);
+}
+function rhHintShow(k){
+  const hint=isRTL()?RH_HINT_AR[k]:RH_HINT_EN[k], note=isRTL()?RH_NOTE_AR:RH_NOTE_EN;
+  document.getElementById("rhHint").innerHTML="💧 "+hint+"<br><span style='color:#6b5e49'>"+note+"</span>";
+}
+function setSched(mode){
+  schedDraft.mode=mode;
+  document.querySelectorAll("#schedSeg button").forEach(b=>b.classList.toggle("on",b.dataset.m===mode));
+  const ex=document.getElementById("schedExtra");
+  if(mode==="everyN"){ ex.innerHTML=`<label>${t("everyLabel")}</label><input id="f_n" type="number" inputmode="numeric" value="${schedDraft.n||3}">`; }
+  else if(mode==="specific"){ ex.innerHTML=`<label>${t("specificLabel")}</label><input id="f_days_list" value="${(schedDraft.days||[]).join(",")}">`; }
+  else ex.innerHTML="";
+}
+function openEgg(id){
+  editId=id||null; fillSpecies();
+  document.getElementById("eggModalTitle").textContent=id?t("eggEdit"):t("eggNew");
+  if(id){
+    const e=eggs.find(x=>x.id===id);
+    document.getElementById("f_name").value=e.name||"";
+    let si=SPECIES.findIndex(s=>s.g===e.species); if(si<0) si=0;
+    document.getElementById("f_species").value=si;
+    document.getElementById("f_fresh").value=e.fresh;
+    document.getElementById("f_date").value=e.setDate;
+    document.getElementById("f_days").value=e.days;
+    document.getElementById("f_target").value=e.target;
+    document.getElementById("f_pip").value=e.pip;
+    document.getElementById("f_temp").value=e.temp||37.5;
+    schedDraft=Object.assign({mode:"everyN",n:3,days:[0,4,8,12]}, e.schedule||{});
+    rhHintShow(SPECIES[si].k);
+    document.getElementById("eggDelBtn").style.display="block";
+  } else {
+    document.getElementById("f_name").value="";
+    document.getElementById("f_fresh").value="";
+    document.getElementById("f_date").value=today();
+    document.getElementById("f_temp").value="37.5";
+    document.getElementById("f_species").value=0; applySpecies();
+    schedDraft={mode:"everyN",n:3,days:[0,4,8,12]};
+    document.getElementById("eggDelBtn").style.display="none";
+  }
+  setSched(schedDraft.mode);
+  document.getElementById("eggModal").classList.add("open");
+}
+function readSched(){
+  const m=schedDraft.mode, out={mode:m};
+  if(m==="everyN"){ const v=parseInt((document.getElementById("f_n")||{}).value); out.n=v>0?v:3; }
+  else if(m==="specific"){ const raw=(document.getElementById("f_days_list")||{}).value||""; out.days=raw.split(",").map(s=>parseInt(s.trim())).filter(n=>!isNaN(n)&&n>=0); if(!out.days.length) out.days=[0]; }
+  return out;
+}
+function saveEgg(){
+  const fresh=parseFloat(document.getElementById("f_fresh").value);
+  const days=parseInt(document.getElementById("f_days").value);
+  if(!fresh||fresh<=0){ toast(t("needFresh")); return; }
+  if(!days||days<=0){ toast(t("needDays")); return; }
+  const data={
+    name:document.getElementById("f_name").value.trim(),
+    species:SPECIES[+document.getElementById("f_species").value].g,
+    fresh,days, setDate:document.getElementById("f_date").value||today(),
+    target:parseFloat(document.getElementById("f_target").value)||15,
+    pip:parseInt(document.getElementById("f_pip").value)||Math.max(1,days-3),
+    temp:parseFloat(document.getElementById("f_temp").value)||37.5,
+    schedule:readSched()
+  };
+  if(editId){ Object.assign(eggs.find(x=>x.id===editId),data); }
+  else { data.id=uid(); data.meas=[]; eggs.unshift(data); }
+  save(); closeModal("eggModal"); renderList();
+  if(editId&&document.getElementById("detail").classList.contains("open")) openDetail(editId);
+  toast(editId?t("updated"):t("added"));
+}
+function deleteEgg(){
+  if(!editId) return; if(!confirm(t("confirmDel"))) return;
+  eggs=eggs.filter(e=>e.id!==editId); save(); closeModal("eggModal");
+  document.getElementById("detail").classList.remove("open"); document.body.style.overflow="";
+  renderList(); toast(t("deleted"));
+}
+
+/* ============ measure modal ============ */
+function openMeas(id,mid){
+  measEggId=id; measEditId=mid||null; const e=eggs.find(x=>x.id===id), a=analyse(e);
+  const m=mid?e.meas.find(x=>x.id===mid):null;
+  document.getElementById("t_measTitle").textContent=mid?t("editMeas"):t("measTitle");
+  document.getElementById("m_weight").value=m?m.weight:"";
+  document.getElementById("m_date").value=m?m.date:today();
+  document.getElementById("m_rh").value=m?(m.rh!=null?m.rh:""):(a.lastRH!=null?a.lastRH:"");
+  document.getElementById("m_temp").value=m?(m.temp!=null?m.temp:""):(a.lastTemp!=null?a.lastTemp:(e.temp||""));
+  document.getElementById("m_note").value=m?(m.note||""):"";
+  document.getElementById("measHint").innerHTML=t("measHint",{w:a.targetWeightToday.toFixed(2),l:a.targetLossToday.toFixed(1)});
+  document.getElementById("measModal").classList.add("open");
+  setTimeout(()=>document.getElementById("m_weight").focus(),120);
+}
+function saveMeas(){
+  const w=parseFloat(document.getElementById("m_weight").value);
+  if(!w||w<=0){ toast(t("needWeight")); return; }
+  const e=eggs.find(x=>x.id===measEggId); if(!e) return;
+  const rhv=document.getElementById("m_rh").value, tv=document.getElementById("m_temp").value;
+  const rec={date:document.getElementById("m_date").value||today(),weight:w,
+    rh:rhv===""?null:parseFloat(rhv), temp:tv===""?null:parseFloat(tv), note:document.getElementById("m_note").value.trim()};
+  if(measEditId){ Object.assign(e.meas.find(x=>x.id===measEditId),rec); }
+  else { rec.id=uid(); e.meas.push(rec); }
+  measEditId=null; save(); closeModal("measModal"); openDetail(measEggId); toast(t("measSaved"));
+}
+function delMeas(eid,mid){ const e=eggs.find(x=>x.id===eid); if(!e) return; e.meas=e.meas.filter(m=>m.id!==mid); save(); openDetail(eid); }
+
+/* ============ share & ics ============ */
+function shareEgg(){
+  const e=eggs.find(x=>x.id===currentId); if(!e) return; const a=analyse(e);
+  const lines=[
+    `🥚 ${e.name||spName(e.species)} (${spName(e.species)})`,
+    `${t("day")} ${a.elapsed}/${e.days} · ${t("freshL")}: ${e.fresh}g`,
+    a.last?`${t("curWeight")}: ${a.last.weight}g · ${t("lostSoFar")}: ${a.aLoss.toFixed(1)}% (${t("targetNow")} ${a.targetLossToday.toFixed(1)}%)`:`—`,
+    `${stLabel(a.status)}${a.status!=="wait"&&a.status!=="lockdown"?` · ${t("nextWeigh")}: ${t("day").toLowerCase()} ${a.nextDay} (${fmtD(a.nextDate)})`:""}`,
+  ];
+  const txt=lines.join("\n");
+  if(navigator.share){ navigator.share({text:txt}).catch(()=>{}); }
+  else if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(()=>toast(t("copied"))); }
+  else toast(t("copied"));
+}
+function icsDate(s){ return s.replace(/-/g,""); }
+function exportICS(id){
+  const e=eggs.find(x=>x.id===id); if(!e) return;
+  const sched=scheduleDays(e), name=(e.name||spName(e.species));
+  let v=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//DryDown//Incubation//EN","CALSCALE:GREGORIAN"];
+  sched.forEach(d=>{
+    const date=addDays(e.setDate,d), end=addDays(date,1);
+    v.push("BEGIN:VEVENT","UID:"+uid()+"@drydown","DTSTART;VALUE=DATE:"+icsDate(date),"DTEND;VALUE=DATE:"+icsDate(end),
+      "SUMMARY:"+(isRTL()?"⚖ زِن: ":"⚖ Weigh: ")+name+" (d"+d+")",
+      "DESCRIPTION:"+(isRTL()?"الوزن المتوقع":"Target weight")+" "+targetWeightAt(e,d).toFixed(2)+"g",
+      "BEGIN:VALARM","TRIGGER:PT0S","ACTION:DISPLAY","DESCRIPTION:"+name,"END:VALARM","END:VEVENT");
+  });
+  // lockdown + hatch
+  v.push("BEGIN:VEVENT","UID:"+uid()+"@drydown","DTSTART;VALUE=DATE:"+icsDate(addDays(e.setDate,e.pip||e.days)),
+    "SUMMARY:"+(isRTL()?"🔒 الإغلاق + رطوبة 65–70٪: ":"🔒 Lockdown + RH 65–70%: ")+name,"END:VEVENT");
+  v.push("BEGIN:VEVENT","UID:"+uid()+"@drydown","DTSTART;VALUE=DATE:"+icsDate(addDays(e.setDate,e.days)),
+    "SUMMARY:"+(isRTL()?"🐣 الفقس المتوقع: ":"🐣 Expected hatch: ")+name,"END:VEVENT");
+  v.push("END:VCALENDAR");
+  download(v.join("\r\n"),"text/calendar","drydown-"+name.replace(/\s+/g,"_")+".ics"); toast(t("icsDone"));
+}
+
+/* ============ backup ============ */
+function download(text,mime,fn){ const b=new Blob([text],{type:mime}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=fn; a.click(); URL.revokeObjectURL(u); }
+function exportData(){ download(JSON.stringify(eggs,null,2),"application/json","drydown-backup-"+today()+".json"); toast(t("backupDone")); }
+function importData(ev){
+  const f=ev.target.files[0]; if(!f) return; const r=new FileReader();
+  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(Array.isArray(d)){ eggs=d.map(e=>({...e,id:e.id||uid(),meas:e.meas||[]})); save(); renderList(); toast(t("restored",{n:eggs.length})); } else toast(t("badFile")); }catch(e){ toast(t("badFile")); } };
+  r.readAsText(f); ev.target.value="";
+}
+
+/* ============ info page ============ */
+const SOURCES=[
+  {n:1,a:"D.M.P. Engineering — Relative humidity & egg weight loss (parrots, 15%±3%)",u:"https://www.dmp-engineering.com/relative-humidity-rh-during-the-incubation-process/"},
+  {n:2,a:"Brinsea — Incubation Handbook (13–15% loss laying→pipping)",u:"https://www.brinsea.com/Brochures/BrinseaHandbook.pdf"},
+  {n:3,a:"HARI (Hagen) — Artificial incubation of bird eggs (altricial 12–16%, temp 36.9–37.5°C)",u:"https://hari.ca/avian-care/artificial-incubation-applied-to-bird-eggs/"},
+  {n:4,a:"Lourens et al. — Eggshell temperature; machine temp lowered from d15 as embryo heat rises",u:"https://sciencedirect.com/science/article/pii/S0032579119446178"},
+  {n:5,a:"Pas Reform / Poultry Site — Why incubator temp differs from eggshell temp (EST 37.6–37.9°C)",u:"https://www.thepoultrysite.com/articles/why-incubator-temperature-differs-from-egg-shell-temperature"},
+  {n:6,a:"AFA Watchbird / exoticpetvet — Avian incubation: hatcher ~1°F lower; Moluccan 16–20%, Eclectus 14–17%",u:"https://www.exoticpetvet.net/avian/incubation2.html"},
+  {n:7,a:"Voren's Aviaries — Temperature/humidity interaction with weight loss",u:"https://voren.com/articles/parrot-incubation-demystified/"},
+  {n:8,a:"Poultry Keeper — Weight loss & the linear target line (stop before internal pip)",u:"https://poultrykeeper.com/incubation-brooding/egg-incubation-weight-loss/"},
+  {n:9,a:"Horstmann Trust — Fresh-weight & daily weight-loss calculators",u:"https://vultures.ngo/egg-incubation-calculator/"},
+];
+const INFO_EN=`
+<h3>The idea in one line</h3>
+<p>An egg loses weight only because water evaporates through the shell pores, so <b>weight loss = moisture loss</b>. You aim for a fixed total loss by the time the chick internally pips, and you steer toward it with <b>humidity</b>.</p>
+<h3>The target</h3>
+<p>For parrots the classic figure is <b>15% (±3%)</b> of fresh weight by internal pip [1][2]. Many altricial species sit in a 12–16% band [3]; large cockatoos can need more (e.g. Moluccan 16–20%, Eclectus 14–17%) [6].</p>
+<h3>The rule you follow</h3>
+<p>Draw a straight line from fresh weight (day 0) down to <i>fresh − target%</i> at pip day (≈ hatch − 3). Each weigh-in: if you've lost <b>less</b> than the line → <b>lower humidity</b> (or open a vent); if <b>more</b> → <b>raise humidity</b> [8]. Stop tracking at internal pip — loss then jumps ~5% as the chick breathes [8].</p>
+<div class="note">This app computes that line for you, plots your weigh-ins on it, and converts the gap into a raise/lower-humidity instruction plus a projection of where you'll land at pip.</div>
+<h3>Does temperature need adjusting?</h3>
+<p>Mostly you hold temperature steady (~37.5 °C forced-air; parrots often 37.0–37.5 °C [3]) and let humidity do the weight-loss work. But temperature has two real adjustments:</p>
+<ul>
+<li><b>Late incubation:</b> the embryo generates its own heat, so to keep the eggshell near 37.8 °C the machine air temp is set <b>lower from ~day 15</b> [4][5]. In simple incubators, watch for overheating in the last third.</li>
+<li><b>Hatcher / lockdown:</b> drop ~0.4 °C below the incubation temp (≈1 °F) and raise humidity to 65–70% [6].</li>
+</ul>
+<p>Temperature also interacts with loss: run warm and the chick develops faster, hatches early, with less time for water loss; run cool and hatch lags [7]. So fix weight loss with humidity, and treat temperature as the schedule.</p>
+<div class="note">⚠️ Numbers are general guidance from the sources below, not species-exact prescriptions. Calibrate your own incubator, verify at egg height, and keep records per clutch.</div>
+<h3>Sources</h3>`;
+const INFO_AR=`
+<h3>الفكرة في سطر</h3>
+<p>تفقد البيضة وزنها فقط لأن الماء يتبخّر عبر مسام القشرة، أي أن <b>فقدان الوزن = فقدان الرطوبة</b>. تستهدف نسبة فقد كلية ثابتة حتى لحظة النقر الداخلي، وتوجّهها عبر <b>الرطوبة</b>.</p>
+<h3>الهدف</h3>
+<p>للببغاوات الرقم الكلاسيكي هو <b>15٪ (±3٪)</b> من الوزن الطازج حتى النقر الداخلي [1][2]. كثير من الأنواع غير الناضجة عند الفقس ضمن نطاق 12–16٪ [3]؛ وقد تحتاج الكوكاتو الكبيرة أكثر (مثل المولوكي 16–20٪، الإكلكتوس 14–17٪) [6].</p>
+<h3>القاعدة المتّبعة</h3>
+<p>ارسم خطًا مستقيمًا من الوزن الطازج (اليوم 0) نزولًا إلى <i>الطازج − نسبة الهدف٪</i> عند يوم النقر (≈ الفقس − 3). في كل وزن: إن فقدت <b>أقل</b> من الخط ← <b>اخفض الرطوبة</b> (أو افتح تهوية)؛ وإن فقدت <b>أكثر</b> ← <b>ارفع الرطوبة</b> [8]. أوقف التتبّع عند النقر الداخلي — إذ يقفز الفقد ~5٪ مع تنفّس الفرخ [8].</p>
+<div class="note">يحسب هذا التطبيق ذلك الخط نيابةً عنك، ويرسم أوزانك عليه، ويحوّل الفارق إلى تعليمة «ارفع/اخفض الرطوبة» مع توقّع لما ستصل إليه عند النقر.</div>
+<h3>هل تحتاج الحرارة إلى ضبط؟</h3>
+<p>غالبًا تُبقي الحرارة ثابتة (~37.5°م للهواء القسري؛ الببغاوات غالبًا 37.0–37.5°م [3]) وتترك الرطوبة تؤدي عمل الفقد. لكن للحرارة ضبطان حقيقيان:</p>
+<ul>
+<li><b>أواخر التحضين:</b> يولّد الجنين حرارته الخاصة، لذا لإبقاء قشرة البيضة قرب 37.8°م تُضبط حرارة هواء الجهاز <b>أخفض من اليوم ~15</b> [4][5]. في الحاضنات البسيطة، احذر فرط التسخين في الثلث الأخير.</li>
+<li><b>الفقّاسة / الإغلاق:</b> اخفض ~0.4°م عن حرارة التحضين (≈1°ف) وارفع الرطوبة إلى 65–70٪ [6].</li>
+</ul>
+<p>تتفاعل الحرارة مع الفقد: الحرارة المرتفعة تُسرّع النمو وتُبكّر الفقس بوقت أقل لفقد الماء؛ والمنخفضة تؤخّره [7]. لذا اضبط الفقد بالرطوبة، واعتبر الحرارة جدولًا زمنيًا.</p>
+<div class="note">⚠️ الأرقام إرشاد عام من المصادر أدناه، وليست وصفة دقيقة لكل نوع. عايِر حاضنتك، وتحقّق عند مستوى البيض، واحتفظ بسجلات لكل وجبة بيض.</div>
+<h3>المصادر</h3>`;
+function renderInfo(){
+  const body=isRTL()?INFO_AR:INFO_EN;
+  const rows=SOURCES.map(s=>`<tr><td><span class="ref">[${s.n}]</span> ${esc(s.a)}<br><a href="${s.u}" target="_blank" rel="noopener">${s.u}</a></td></tr>`).join("");
+  document.getElementById("infoBody").innerHTML=body+`<table class="srctable"><tbody>${rows}</tbody></table>
+    <p class="foot" style="margin-top:20px">Dry-Down · offline tool · data on-device only</p>`;
+  document.getElementById("t_infoTitle").textContent=t("infoTitle");
+}
+function openInfo(){ renderInfo(); document.getElementById("infoScreen").classList.add("open"); document.body.style.overflow="hidden"; }
+function closeInfo(){ document.getElementById("infoScreen").classList.remove("open"); document.body.style.overflow=""; }
+
+/* ============ misc ============ */
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",ev=>{ if(ev.target===m) m.classList.remove("open"); }));
+let toastT; function toast(msg){ const el=document.getElementById("toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2000); }
+window.addEventListener("resize",()=>{ if(currentId&&document.getElementById("detail").classList.contains("open")){ const e=eggs.find(x=>x.id===currentId); if(e) requestAnimationFrame(()=>drawChart(e,analyse(e))); } });
+
+paintChrome(); renderList();
+</script>
+</body>
+</html>
