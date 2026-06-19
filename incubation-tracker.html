@@ -298,6 +298,7 @@
       <div><label id="l_pip"></label><input id="f_pip" type="number" step="1" inputmode="numeric"></div>
       <div><label id="l_temp"></label><input id="f_temp" type="number" step="0.1" inputmode="decimal" placeholder="37.5"></div>
     </div>
+    <label id="l_targetRH"></label><input id="f_targetRH" type="number" step="1" inputmode="numeric" placeholder="45">
     <label id="l_incubator"></label>
     <select id="f_incubator"></select>
     <label id="l_sched"></label>
@@ -355,6 +356,7 @@ const T={
   band:"Acceptable band (±3%)", idealLine:"Ideal {x}% line", yourW:"Your weigh-ins",
   chartT:"Weight loss vs incubation day",
   holdTemp:"Hold ≈ {x}°C — humidity does the weight loss.",
+  holdRH:"Hold ≈ {x}% RH to start — adjust from there based on weigh-ins.",
   pipLock:"Pip / lockdown ≈ day {d} ({date}) — raise RH to 65–70%.",
   hatch:"Expected hatch ≈ day {d} ({date})", toGo:"{n} days to go.", overdue:"due / overdue.",
   candle:"Candle around day {a} & day {b} to check the air cell.",
@@ -369,8 +371,8 @@ const T={
   rhFromTo:" (from {a}% → try {b}%)",
   fastTemp:" Humidity is the main lever; only if RH is already maxed, a slightly higher temp shortens incubation (less time to lose) — change temp cautiously.",
   slowTemp:" Humidity is the main lever; only if RH is already at minimum, a slightly lower temp lengthens incubation — change temp cautiously.",
-  severeFastTemp:" <b>Gap is large</b> — humidity alone may not catch up in time. Also nudge air temp <b>+0.1–0.2°C</b> (speeds development, less time to lose water) and recheck in 2 days.",
-  severeSlowTemp:" <b>Gap is large</b> — humidity alone may not catch up in time. Also nudge air temp <b>−0.1–0.2°C</b> (slows development, more time to lose water) and recheck in 2 days.",
+  severeFastTemp:" <b>Gap is large.</b> Mainstream guidance [2][8] keeps temperature fixed and corrects weight loss with humidity alone — push RH as far as your incubator allows first. Only if RH is already maxed and the trend still won't close, a few (less-validated, parrot-specific) sources suggest a cautious <b>+0.1–0.2°C</b> nudge to shorten time-to-pip [7]. Recheck in 2 days.",
+  severeSlowTemp:" <b>Gap is large.</b> Mainstream guidance [2][8] keeps temperature fixed and corrects weight loss with humidity alone — push RH as far down (or vent) as your incubator allows first. Only if RH is already at minimum and the trend still won't close, a few (less-validated, parrot-specific) sources suggest a cautious <b>−0.1–0.2°C</b> nudge [7]. Recheck in 2 days.",
   overTarget:" ⚠️ Already past the {t}% total target — you can't undo lost water. Maximise humidity now (e.g. egg in a vented bag with damp sterile gauze, aired daily) to stop further loss.",
   waitMsg:"Record the fresh weight on setting day, then weigh on schedule. The ideal egg should weigh <b>{w}g</b> today ({l}% lost).",
   lockMsg:"Past pip day {p}. Stop turning and <b>raise humidity to 65–70%</b>. Weight now jumps as the chick breathes — that's normal, stop tracking loss.",
@@ -385,6 +387,7 @@ const T={
   eggHint:"Pick a species to auto-fill incubation days & target loss — override anything.",
   nameL:"Label / ID", speciesL:"Species", freshL:"Fresh weight (g)", dateL:"Set date (day 0)",
   daysL:"Incub. days", targetL:"Target loss %", pipL:"Pip day (loss target by)", tempL:"Set temp °C",
+  targetRhL:"Target RH % (starting point)",
   schedL:"Weigh-in schedule", schDaily:"Daily", schEvery:"Every N days", schSpecific:"Specific days",
   everyLabel:"Every how many days", specificLabel:"Days (comma separated, e.g. 0,4,8,12)",
   saveEgg:"Save egg", delEgg:"Delete this egg", confirmDel:"Delete this egg and all its weigh-ins?",
@@ -428,6 +431,7 @@ const T={
   band:"النطاق المقبول (±3٪)", idealLine:"خط {x}٪ المثالي", yourW:"أوزانك",
   chartT:"فقدان الوزن مقابل يوم التحضين",
   holdTemp:"ثبّت الحرارة ≈ {x}°م — الرطوبة هي ما يضبط الفقد.",
+  holdRH:"ثبّت الرطوبة ≈ {x}٪ كبداية — عدّلها لاحقًا حسب نتائج الوزن.",
   pipLock:"النقر/الإغلاق ≈ اليوم {d} ({date}) — ارفع الرطوبة إلى 65–70٪.",
   hatch:"الفقس المتوقع ≈ اليوم {d} ({date})", toGo:"باقٍ {n} يوم.", overdue:"حان/تأخّر.",
   candle:"افحص بالضوء حوالي اليوم {a} واليوم {b} لمراقبة الغرفة الهوائية.",
@@ -442,8 +446,8 @@ const T={
   rhFromTo:" (من {a}٪ ← جرّب {b}٪)",
   fastTemp:" الرطوبة هي الأداة الأساسية؛ وفقط إذا كانت الرطوبة في أقصاها، فإن رفع الحرارة قليلًا يقصّر التحضين (وقت أقل للفقد) — غيّر الحرارة بحذر.",
   slowTemp:" الرطوبة هي الأداة الأساسية؛ وفقط إذا كانت الرطوبة في أدناها، فإن خفض الحرارة قليلًا يطيل التحضين — غيّر الحرارة بحذر.",
-  severeFastTemp:" <b>الفارق كبير</b> — قد لا تكفي الرطوبة وحدها للتعويض في الوقت المتاح. اضبط أيضًا حرارة الهواء <b>+0.1–0.2°م</b> (يسرّع النمو، وقت أقل لفقد الماء) وأعد الفحص خلال يومين.",
-  severeSlowTemp:" <b>الفارق كبير</b> — قد لا تكفي الرطوبة وحدها للتعويض في الوقت المتاح. اضبط أيضًا حرارة الهواء <b>−0.1–0.2°م</b> (يبطّئ النمو، وقت أطول لفقد الماء) وأعد الفحص خلال يومين.",
+  severeFastTemp:" <b>الفارق كبير.</b> الإرشاد السائد [2][8] يُثبّت الحرارة ويصحّح فقد الوزن بالرطوبة وحدها — ارفع الرطوبة لأقصى ما تسمح به حاضنتك أولًا. فقط إن كانت الرطوبة في أقصاها والاتجاه لا يزال لا يتقارب، تذكر بعض المصادر (الأقل توثيقًا، الخاصة بالببغاوات) ضبطًا حذرًا بمقدار <b>+0.1–0.2°م</b> لتقصير الوقت حتى النقر [7]. أعد الفحص خلال يومين.",
+  severeSlowTemp:" <b>الفارق كبير.</b> الإرشاد السائد [2][8] يُثبّت الحرارة ويصحّح فقد الوزن بالرطوبة وحدها — اخفض الرطوبة لأقصى ما تسمح به حاضنتك (أو هوّ) أولًا. فقط إن كانت الرطوبة في أدناها والاتجاه لا يزال لا يتقارب، تذكر بعض المصادر (الأقل توثيقًا، الخاصة بالببغاوات) ضبطًا حذرًا بمقدار <b>−0.1–0.2°م</b> [7]. أعد الفحص خلال يومين.",
   overTarget:" ⚠️ تجاوزت هدف الفقد الكلي {t}٪ — لا يمكن إعادة الماء المفقود. ارفع الرطوبة لأقصاها الآن (مثل وضع البيضة في كيس مثقوب مع شاش معقّم مبلّل، يُهوّى يوميًا) لإيقاف المزيد من الفقد.",
   waitMsg:"سجّل الوزن الطازج يوم الوضع، ثم زِن حسب الجدول. يُفترض أن تزن البيضة المثالية <b>{w}غ</b> اليوم (فُقد {l}٪).",
   lockMsg:"تجاوزت يوم النقر {p}. أوقف التقليب و<b>ارفع الرطوبة إلى 65–70٪</b>. يقفز الوزن الآن مع تنفّس الفرخ — هذا طبيعي، أوقف تتبّع الفقد.",
@@ -457,6 +461,7 @@ const T={
   eggHint:"اختر النوع لملء أيام التحضين ونسبة الفقد تلقائيًا — يمكنك تعديل أي قيمة.",
   nameL:"الاسم / المعرّف", speciesL:"النوع", freshL:"الوزن الطازج (غ)", dateL:"تاريخ الوضع (اليوم 0)",
   daysL:"أيام التحضين", targetL:"نسبة الفقد ٪", pipL:"يوم النقر (هدف الفقد عنده)", tempL:"الحرارة °م",
+  targetRhL:"الرطوبة المستهدفة ٪ (نقطة بداية)",
   schedL:"جدول الوزن", schDaily:"يوميًا", schEvery:"كل N يوم", schSpecific:"أيام محددة",
   everyLabel:"كل كم يوم", specificLabel:"الأيام (مفصولة بفاصلة، مثل 0,4,8,12)",
   saveEgg:"حفظ البيضة", delEgg:"حذف هذه البيضة", confirmDel:"حذف هذه البيضة وكل أوزانها؟",
@@ -523,6 +528,7 @@ const RH_HINT_EN={tiny:"Tiny egg — start ~48–55% RH; thin shells lose fast."
 const RH_HINT_AR={tiny:"بيضة صغيرة جدًا — ابدأ ~48–55٪ رطوبة؛ القشرة الرقيقة تفقد بسرعة.",small:"بيضة صغيرة — ابدأ ~46–52٪ رطوبة.",med:"بيضة متوسطة — ابدأ ~46–52٪ رطوبة.","med-rf":"نوع غابات مطيرة — ابدأ أعلى قليلًا ~50–58٪.",large:"بيضة كبيرة/قشرة سميكة — ابدأ أخفض ~38–45٪.","large-rf":"بيضة غابات كبيرة — ابدأ ~40–48٪.",ref:"مرجع الدواجن — ~45–50٪، الإغلاق 65٪+."};
 const RH_NOTE_EN="RH numbers are starting points only — every incubator reads differently. The egg's weight is the real instrument.";
 const RH_NOTE_AR="أرقام الرطوبة نقطة بداية فقط — كل حاضنة تقرأ بشكل مختلف. وزن البيضة هو المقياس الحقيقي.";
+const RH_MID={tiny:51,small:49,med:49,"med-rf":54,large:41,"large-rf":44,ref:47};
 
 /* ============ storage ============ */
 const KEY="drydown.eggs.v1";
@@ -549,7 +555,7 @@ function turnLabel(tt){ return {auto360:t("ttAuto"),manual180:t("tt180"),manual4
    actual temp/RH sit to this egg's own calculated ideal. */
 function fitScore(e,a,inc){
   if(!inc) return null;
-  const idealT=e.temp||37.5, idealRH=a.suggestedRH?a.suggestedRH.clamped:a.lastRH;
+  const idealT=e.temp||37.5, idealRH=a.suggestedRH?a.suggestedRH.clamped:(a.lastRH!=null?a.lastRH:e.targetRH);
   let score=100-Math.abs(inc.temp-idealT)*25;
   if(idealRH!=null) score-=Math.abs(inc.rh-idealRH)*1.2;
   return Math.max(0,Math.min(100,Math.round(score)));
@@ -654,6 +660,7 @@ function paintChrome(){
   // egg modal labels
   set("l_name","nameL"); set("l_species","speciesL"); set("l_fresh","freshL"); set("l_date","dateL");
   set("l_days","daysL"); set("l_target","targetL"); set("l_pip","pipL"); set("l_temp","tempL");
+  set("l_targetRH","targetRhL");
   set("l_sched","schedL"); set("t_eggHint","eggHint"); set("t_saveEgg","saveEgg");
   document.getElementById("eggDelBtn").textContent=t("delEgg");
   const segs=document.querySelectorAll("#schedSeg button");
@@ -698,7 +705,10 @@ function renderList(){
       const incName=e.incubatorId&&incubators.find(i=>i.id===e.incubatorId);
       return `<div class="egg" onclick="openDetail('${e.id}')">
         <div class="top"><div><div class="name">${esc(e.name||"—")}</div><div class="sp">${esc(spName(e.species))} · ${e.days}${isRTL()?"ي":"d"}${incName?" · 📦 "+esc(incName.name):""}</div></div>
-          <div class="pill ${cls}">${stLabel(a.status)}</div></div>
+          <div style="display:flex;align-items:center;gap:6px;flex:none">
+            <div class="pill ${cls}">${stLabel(a.status)}</div>
+            <button class="delrow" onclick="event.stopPropagation();quickDeleteEgg('${e.id}')" title="Delete">✕</button>
+          </div></div>
         <div class="metaline">
           <div class="m">${t("day")}<b>${a.elapsed<0?0:a.elapsed} / ${e.days}</b></div>
           <div class="m">${t("weight")}<b>${curW}</b></div>
@@ -781,7 +791,8 @@ function gridHTML(e,a){
     <div class="stat"><div class="l">${t("curWeight")}</div><div class="v">${a.last?a.last.weight.toFixed(2):"—"}<small>g</small></div></div>
     <div class="stat"><div class="l">${t("lostSoFar")}</div><div class="v">${a.last?a.aLoss.toFixed(1):"0.0"}<small>% · ${a.targetLossToday.toFixed(1)}%</small></div></div>
     <div class="stat heat"><div class="l">${t("targetTemp")}</div><div class="v">${(e.temp||37.5).toFixed(1)}<small>°C</small></div></div>
-    <div class="stat water"><div class="l">${t("nextWeigh")}</div><div class="v">${a.nextDay==null?"—":a.nextDay}<small>${a.nextDay==null?"":" · "+fmtD(a.nextDate)}</small></div></div>
+    <div class="stat water"><div class="l">${t("idealRhL")}</div><div class="v">${e.targetRH||45}<small>%</small></div></div>
+    <div class="stat"><div class="l">${t("nextWeigh")}</div><div class="v">${a.nextDay==null?"—":a.nextDay}<small>${a.nextDay==null?"":" · "+fmtD(a.nextDate)}</small></div></div>
   </div>`;
 }
 function chartHTML(e){
@@ -798,6 +809,7 @@ function timelineHTML(e,a){
   const left=a.daysLeft>=0?t("toGo",{n:a.daysLeft}):t("overdue");
   return `<div class="timeline">
     🔥 ${t("holdTemp",{x:(e.temp||37.5)})}<br>
+    💧 ${t("holdRH",{x:e.targetRH||45})}<br>
     🥚 ${t("pipLock",{d:a.p,date:fmtD(a.pipDate)})}<br>
     🐣 ${t("hatch",{d:e.days,date:fmtD(a.hatchDate)})} — ${left}<br>
     🔦 ${t("candle",{a:c1,b:c2})}</div>`;
@@ -853,6 +865,7 @@ function applySpecies(){
   document.getElementById("f_days").value=s.d;
   document.getElementById("f_target").value=s.l;
   document.getElementById("f_pip").value=Math.max(1,s.d-3);
+  document.getElementById("f_targetRH").value=RH_MID[s.k]||45;
   rhHintShow(s.k);
 }
 function rhHintShow(k){
@@ -885,6 +898,7 @@ function openEgg(id){
     document.getElementById("f_target").value=e.target;
     document.getElementById("f_pip").value=e.pip;
     document.getElementById("f_temp").value=e.temp||37.5;
+    document.getElementById("f_targetRH").value=e.targetRH||RH_MID[SPECIES[si].k]||45;
     fillIncubatorSelect(e.incubatorId);
     schedDraft=Object.assign({mode:"everyN",n:3,days:[0,4,8,12]}, e.schedule||{});
     rhHintShow(SPECIES[si].k);
@@ -920,6 +934,7 @@ function saveEgg(){
     target:parseFloat(document.getElementById("f_target").value)||15,
     pip:parseInt(document.getElementById("f_pip").value)||Math.max(1,days-3),
     temp:parseFloat(document.getElementById("f_temp").value)||37.5,
+    targetRH:parseFloat(document.getElementById("f_targetRH").value)||45,
     incubatorId:document.getElementById("f_incubator").value||null,
     schedule:readSched()
   };
@@ -934,6 +949,10 @@ function deleteEgg(){
   eggs=eggs.filter(e=>e.id!==editId); save(); closeModal("eggModal");
   document.getElementById("detail").classList.remove("open"); document.body.style.overflow="";
   renderList(); toast(t("deleted"));
+}
+function quickDeleteEgg(id){
+  if(!confirm(t("confirmDel"))) return;
+  eggs=eggs.filter(e=>e.id!==id); save(); renderList(); toast(t("deleted"));
 }
 
 /* ============ incubators ============ */
