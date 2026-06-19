@@ -180,6 +180,7 @@
       </div>
       <div class="toggles">
         <button class="chip" id="langBtn" onclick="toggleLang()">ع</button>
+        <button class="chip" onclick="openIncList()" id="incBtn">📦</button>
         <button class="chip" onclick="openInfo()" id="infoBtn">ⓘ</button>
       </div>
     </div>
@@ -227,6 +228,52 @@
   </div>
 </div>
 
+<!-- INCUBATORS LIST -->
+<div class="screen" id="incScreen">
+  <div class="swrap">
+    <div class="shead">
+      <button class="back" onclick="closeIncList()">‹</button>
+      <div class="stitle"><h2 id="t_incTitle">—</h2></div>
+      <button class="iconbtn" onclick="openIncModal()" title="Add">＋</button>
+    </div>
+    <div id="incList"></div>
+  </div>
+</div>
+
+<!-- INCUBATOR DETAIL -->
+<div class="screen" id="incDetail">
+  <div class="swrap">
+    <div class="shead">
+      <button class="back" onclick="closeIncDetail()">‹</button>
+      <div class="stitle"><h2 id="idName">—</h2><div class="sp" id="idSp">—</div></div>
+      <button class="iconbtn" onclick="openIncModal(currentIncId)" title="Edit">✎</button>
+    </div>
+    <div id="incDetailBody"></div>
+  </div>
+</div>
+
+<!-- INCUBATOR MODAL -->
+<div class="modal" id="incModal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <h3 id="incModalTitle">—</h3>
+    <label id="l_incName"></label><input id="fi_name">
+    <div class="two">
+      <div><label id="l_incTemp"></label><input id="fi_temp" type="number" step="0.1" inputmode="decimal" placeholder="37.5"></div>
+      <div><label id="l_incRh"></label><input id="fi_rh" type="number" step="1" inputmode="numeric" placeholder="45"></div>
+    </div>
+    <label id="l_turnType"></label>
+    <div class="seg" id="turnSeg">
+      <button data-tt="auto360" onclick="setTurnType('auto360')"></button>
+      <button data-tt="manual180" onclick="setTurnType('manual180')"></button>
+      <button data-tt="manual45" onclick="setTurnType('manual45')"></button>
+    </div>
+    <p class="hint" id="turnHint" style="margin-top:10px"></p>
+    <button class="savebtn" onclick="saveInc()" id="t_saveInc"></button>
+    <button class="delbtn" id="incDelBtn" style="display:none" onclick="deleteInc()"></button>
+  </div>
+</div>
+
 <!-- EGG MODAL -->
 <div class="modal" id="eggModal">
   <div class="sheet">
@@ -248,6 +295,8 @@
       <div><label id="l_pip"></label><input id="f_pip" type="number" step="1" inputmode="numeric"></div>
       <div><label id="l_temp"></label><input id="f_temp" type="number" step="0.1" inputmode="decimal" placeholder="37.5"></div>
     </div>
+    <label id="l_incubator"></label>
+    <select id="f_incubator"></select>
     <label id="l_sched"></label>
     <div class="seg" id="schedSeg">
       <button data-m="daily" onclick="setSched('daily')"></button>
@@ -343,6 +392,20 @@ const T={
   saveMeas:"Save weigh-in", needWeight:"Enter a weight", measSaved:"Weigh-in saved",
   backupDone:"Backup downloaded", restored:"Restored {n} eggs", badFile:"Could not read file",
   icsDone:"Reminders file downloaded", copied:"Summary copied", shareBtn:"Share",
+  // incubators
+  incTitle:"Incubators", incNew:"New incubator", incEdit:"Edit incubator",
+  incNameL:"Name", incTempL:"Set temp °C", incRhL:"Set RH %", turnTypeL:"Turning type",
+  ttAuto:"Auto-rotating (360°)", tt180:"Manual flip (180°)", tt45:"Manual tilt (45° vertical)",
+  turnL:"Turning", eggsWord:"eggs",
+  incEmptyT:"No incubators yet", incEmptyB:"Add one and assign eggs to track turning and how well its settings fit each egg's own needs.",
+  incNoEggs:"No eggs assigned yet.",
+  saveInc:"Save incubator", delInc:"Delete this incubator", confirmDelInc:"Delete this incubator? Assigned eggs become unassigned.",
+  incAdded:"Incubator added", incUpdated:"Incubator updated", incDeleted:"Incubator deleted",
+  noInc:"— unassigned —", incubatorL:"Incubator",
+  idealTempL:"Ideal temp", idealRhL:"Ideal RH", matchL:"Match",
+  avgMatch:"Overall match", avgMatchMsg:"Eggs here average <b>{p}%</b> match to their own ideal temp/RH. This is a settings-fit estimate, not a validated hatch-rate predictor — each egg's weigh-in trend is still the real signal.",
+  noEggsAssigned:"Assign eggs to this incubator to see a match estimate.",
+  turnsToday:"Turns today", logTurn:"Log a turn",
   // info
   infoTitle:"How it works & sources",
  },
@@ -400,6 +463,19 @@ const T={
   saveMeas:"حفظ الوزن", needWeight:"أدخل الوزن", measSaved:"حُفظ الوزن",
   backupDone:"تم تنزيل النسخة", restored:"تمت استعادة {n} بيضة", badFile:"تعذّر قراءة الملف",
   icsDone:"تم تنزيل ملف التذكيرات", copied:"نُسخ الملخّص", shareBtn:"مشاركة",
+  incTitle:"الحاضنات", incNew:"حاضنة جديدة", incEdit:"تعديل الحاضنة",
+  incNameL:"الاسم", incTempL:"الحرارة °م", incRhL:"الرطوبة ٪", turnTypeL:"نوع التقليب",
+  ttAuto:"تقليب تلقائي دوّار (360°)", tt180:"تقليب يدوي (180°)", tt45:"إمالة يدوية (45° رأسي)",
+  turnL:"التقليب", eggsWord:"بيضات",
+  incEmptyT:"لا حاضنات بعد", incEmptyB:"أضف حاضنة وخصّص لها بيضات لتتبّع التقليب ومدى توافق إعداداتها مع حاجة كل بيضة.",
+  incNoEggs:"لا بيضات مخصّصة بعد.",
+  saveInc:"حفظ الحاضنة", delInc:"حذف هذه الحاضنة", confirmDelInc:"حذف هذه الحاضنة؟ ستصبح البيضات المخصّصة لها غير مخصّصة.",
+  incAdded:"أُضيفت الحاضنة", incUpdated:"حُدّثت الحاضنة", incDeleted:"حُذفت الحاضنة",
+  noInc:"— غير مخصّصة —", incubatorL:"الحاضنة",
+  idealTempL:"الحرارة المثالية", idealRhL:"الرطوبة المثالية", matchL:"التوافق",
+  avgMatch:"التوافق العام", avgMatchMsg:"بيضات هذه الحاضنة تحقق توافقًا متوسطه <b>{p}٪</b> مع حرارتها/رطوبتها المثالية الفردية. هذا تقدير لمدى توافق الإعدادات، لا معدل فقس مُثبَت — يبقى اتجاه وزن كل بيضة هو المؤشر الحقيقي.",
+  noEggsAssigned:"خصّص بيضات لهذه الحاضنة لرؤية تقدير التوافق.",
+  turnsToday:"قلبات اليوم", logTurn:"سجّل تقليبًا",
   infoTitle:"كيف يعمل والمصادر",
  }
 };
@@ -450,6 +526,30 @@ let eggs=load(), currentId=null, editId=null, measEggId=null, measEditId=null, s
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY))||[] }catch(e){ return [] } }
 function save(){ localStorage.setItem(KEY, JSON.stringify(eggs)); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+const KEY_INC="drydown.incubators.v1";
+let incubators=loadInc(), editIncId=null, currentIncId=null, turnDraft="manual180";
+function loadInc(){ try{ return JSON.parse(localStorage.getItem(KEY_INC))||[] }catch(e){ return [] } }
+function saveIncs(){ localStorage.setItem(KEY_INC, JSON.stringify(incubators)); }
+/* Turning angle ~43-45 deg from vertical and frequency are evidence-based, not guessed [12][13][14][15] */
+const TURN_INFO={
+ auto360:{en:"Continuous slow rotation (roller). No manual count needed — just confirm the roller is still turning at each check. Stops at lockdown.",
+   ar:"دوران مستمر وبطيء (مُدوِّر). لا حاجة للعدّ — تحقّق فقط أن المُدوِّر يعمل عند كل فحص. يتوقف عند الإغلاق."},
+ manual180:{en:"Flip the egg a full half-turn (180°) <b>5–7 times/day</b>, an <b>odd number</b> so it ends each night on the side it didn't sleep on before. Spread turns through waking hours. Stops at lockdown.",
+   ar:"اقلب البيضة نصف لفة (180°) <b>5–7 مرات/يوم</b>، بعدد <b>فردي</b> لتنتهي كل ليلة على الجانب المعاكس لليلة السابقة. وزّع القلبات خلال ساعات النهار. يتوقف عند الإغلاق."},
+ manual45:{en:"Tilt the egg <b>45° from vertical</b>, alternating left/right, <b>5–7 times/day minimum</b> — parrot eggs often need more frequent tilting than poultry, especially in week 1. Odd number of turns/day. Stops at lockdown.",
+   ar:"أمِّل البيضة <b>45° عن الوضع الرأسي</b>، بالتبادل يمينًا/يسارًا، <b>5–7 مرات/يوم كحد أدنى</b> — بيض الببغاوات غالبًا يحتاج تقليبًا أكثر تكرارًا من الدواجن، خصوصًا في الأسبوع الأول. عدد فردي من القلبات يوميًا. يتوقف عند الإغلاق."}
+};
+function turnLabel(tt){ return {auto360:t("ttAuto"),manual180:t("tt180"),manual45:t("tt45")}[tt]||tt; }
+/* Heuristic settings-fit score (not a hatch-rate model): how close the incubator's
+   actual temp/RH sit to this egg's own calculated ideal. */
+function fitScore(e,a,inc){
+  if(!inc) return null;
+  const idealT=e.temp||37.5, idealRH=a.suggestedRH?a.suggestedRH.clamped:a.lastRH;
+  let score=100-Math.abs(inc.temp-idealT)*25;
+  if(idealRH!=null) score-=Math.abs(inc.rh-idealRH)*1.2;
+  return Math.max(0,Math.min(100,Math.round(score)));
+}
 
 /* ============ dates ============ */
 function today(){ return new Date().toISOString().slice(0,10); }
@@ -554,13 +654,22 @@ function paintChrome(){
   document.getElementById("eggDelBtn").textContent=t("delEgg");
   const segs=document.querySelectorAll("#schedSeg button");
   segs[0].textContent=t("schDaily"); segs[1].textContent=t("schEvery"); segs[2].textContent=t("schSpecific");
+  set("l_incubator","incubatorL");
   // measure modal
   set("t_measTitle","measTitle"); set("l_mweight","mweightL"); set("l_mdate","mdateL");
   set("l_mrh","mrhL"); set("l_mtemp","mtempL"); set("l_mnote","mnoteL"); set("t_saveMeas","saveMeas");
+  // incubator screen/modal
+  set("t_incTitle","incTitle"); set("l_incName","incNameL"); set("l_incTemp","incTempL");
+  set("l_incRh","incRhL"); set("l_turnType","turnTypeL"); set("t_saveInc","saveInc");
+  document.getElementById("incDelBtn").textContent=t("delInc");
+  const tsegs=document.querySelectorAll("#turnSeg button");
+  tsegs[0].textContent=t("ttAuto"); tsegs[1].textContent=t("tt180"); tsegs[2].textContent=t("tt45");
 }
 function toggleLang(){ lang=isRTL()?"en":"ar"; localStorage.setItem("drydown.lang",lang); paintChrome(); renderList();
   if(document.getElementById("detail").classList.contains("open")&&currentId) openDetail(currentId);
   if(document.getElementById("infoScreen").classList.contains("open")) renderInfo();
+  if(document.getElementById("incScreen").classList.contains("open")) renderIncList();
+  if(document.getElementById("incDetail").classList.contains("open")&&currentIncId) renderIncDetail(currentIncId);
 }
 
 /* ============ list ============ */
@@ -582,8 +691,9 @@ function renderList(){
         if(a.due){ const over=a.elapsed>a.nextDay; dueLine=`<div class="due">⏰ ${over?t("dueOver"):t("dueToday")}</div>`; }
         else dueLine=`<div class="due future">○ ${t("dueNext")}: ${t("day").toLowerCase()} ${a.nextDay} · ${fmtD(a.nextDate)}</div>`;
       }
+      const incName=e.incubatorId&&incubators.find(i=>i.id===e.incubatorId);
       return `<div class="egg" onclick="openDetail('${e.id}')">
-        <div class="top"><div><div class="name">${esc(e.name||"—")}</div><div class="sp">${esc(spName(e.species))} · ${e.days}${isRTL()?"ي":"d"}</div></div>
+        <div class="top"><div><div class="name">${esc(e.name||"—")}</div><div class="sp">${esc(spName(e.species))} · ${e.days}${isRTL()?"ي":"d"}${incName?" · 📦 "+esc(incName.name):""}</div></div>
           <div class="pill ${cls}">${stLabel(a.status)}</div></div>
         <div class="metaline">
           <div class="m">${t("day")}<b>${a.elapsed<0?0:a.elapsed} / ${e.days}</b></div>
@@ -606,12 +716,18 @@ function openDetail(id){
   const a=analyse(e);
   document.getElementById("dName").textContent=e.name||"—";
   document.getElementById("dSp").textContent=`${spName(e.species)} · ${e.fresh}g · ${fmtD(e.setDate)}`;
-  document.getElementById("detailBody").innerHTML=verdictHTML(e,a)+gridHTML(e,a)+chartHTML(e)+timelineHTML(e,a)+tableHTML(e,a);
+  document.getElementById("detailBody").innerHTML=verdictHTML(e,a)+incLineHTML(e,a)+gridHTML(e,a)+chartHTML(e)+timelineHTML(e,a)+tableHTML(e,a);
   document.getElementById("detail").classList.add("open"); document.body.style.overflow="hidden";
   requestAnimationFrame(()=>drawChart(e,a));
 }
 function closeDetail(){ document.getElementById("detail").classList.remove("open"); document.body.style.overflow=""; renderList(); }
 
+function incLineHTML(e,a){
+  if(!e.incubatorId) return "";
+  const inc=incubators.find(i=>i.id===e.incubatorId); if(!inc) return "";
+  const fs=fitScore(e,a,inc);
+  return `<div class="timeline" style="margin-top:10px">📦 <b>${esc(inc.name)}</b> — ${inc.temp.toFixed(1)}°C / ${inc.rh}% RH${fs!=null?` · ${t("matchL")}: <b>${fs}%</b>`:""}</div>`;
+}
 function tempBlock(e,a){
   const tg=e.temp||37.5;
   let parts=[];
@@ -747,6 +863,10 @@ function setSched(mode){
   else if(mode==="specific"){ ex.innerHTML=`<label>${t("specificLabel")}</label><input id="f_days_list" value="${(schedDraft.days||[]).join(",")}">`; }
   else ex.innerHTML="";
 }
+function fillIncubatorSelect(sel){
+  document.getElementById("f_incubator").innerHTML=`<option value="">${t("noInc")}</option>`+incubators.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join("");
+  document.getElementById("f_incubator").value=sel||"";
+}
 function openEgg(id){
   editId=id||null; fillSpecies();
   document.getElementById("eggModalTitle").textContent=id?t("eggEdit"):t("eggNew");
@@ -761,6 +881,7 @@ function openEgg(id){
     document.getElementById("f_target").value=e.target;
     document.getElementById("f_pip").value=e.pip;
     document.getElementById("f_temp").value=e.temp||37.5;
+    fillIncubatorSelect(e.incubatorId);
     schedDraft=Object.assign({mode:"everyN",n:3,days:[0,4,8,12]}, e.schedule||{});
     rhHintShow(SPECIES[si].k);
     document.getElementById("eggDelBtn").style.display="block";
@@ -770,6 +891,7 @@ function openEgg(id){
     document.getElementById("f_date").value=today();
     document.getElementById("f_temp").value="37.5";
     document.getElementById("f_species").value=0; applySpecies();
+    fillIncubatorSelect("");
     schedDraft={mode:"everyN",n:3,days:[0,4,8,12]};
     document.getElementById("eggDelBtn").style.display="none";
   }
@@ -794,6 +916,7 @@ function saveEgg(){
     target:parseFloat(document.getElementById("f_target").value)||15,
     pip:parseInt(document.getElementById("f_pip").value)||Math.max(1,days-3),
     temp:parseFloat(document.getElementById("f_temp").value)||37.5,
+    incubatorId:document.getElementById("f_incubator").value||null,
     schedule:readSched()
   };
   if(editId){ Object.assign(eggs.find(x=>x.id===editId),data); }
@@ -807,6 +930,99 @@ function deleteEgg(){
   eggs=eggs.filter(e=>e.id!==editId); save(); closeModal("eggModal");
   document.getElementById("detail").classList.remove("open"); document.body.style.overflow="";
   renderList(); toast(t("deleted"));
+}
+
+/* ============ incubators ============ */
+function openIncList(){ renderIncList(); document.getElementById("incScreen").classList.add("open"); document.body.style.overflow="hidden"; }
+function closeIncList(){ document.getElementById("incScreen").classList.remove("open"); document.body.style.overflow=""; renderList(); }
+function avgFit(assigned,inc){
+  const scores=assigned.map(e=>fitScore(e,analyse(e),inc)).filter(s=>s!=null);
+  return scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):null;
+}
+function renderIncList(){
+  const list=document.getElementById("incList");
+  if(!incubators.length){ list.innerHTML=`<div class="empty"><b>${t("incEmptyT")}</b>${t("incEmptyB")}</div>`; return; }
+  list.innerHTML=incubators.map(inc=>{
+    const assigned=eggs.filter(e=>e.incubatorId===inc.id), avg=avgFit(assigned,inc);
+    const cls=avg==null?"wait":(avg>=80?"ok":avg>=60?"slow":"fast");
+    return `<div class="egg" onclick="openIncDetail('${inc.id}')">
+      <div class="top"><div><div class="name">${esc(inc.name)}</div><div class="sp">${assigned.length} ${t("eggsWord")}</div></div>
+        <div class="pill ${cls}">${avg==null?"—":avg+"%"}</div></div>
+      <div class="metaline">
+        <div class="m">${t("targetTemp")}<b>${inc.temp.toFixed(1)}°C</b></div>
+        <div class="m">${t("rh")}<b>${inc.rh}%</b></div>
+        <div class="m">${t("turnL")}<b>${turnLabel(inc.turnType)}</b></div>
+      </div></div>`;
+  }).join("");
+}
+function openIncDetail(id){ currentIncId=id; renderIncDetail(id); document.getElementById("incDetail").classList.add("open"); document.body.style.overflow="hidden"; }
+function closeIncDetail(){ document.getElementById("incDetail").classList.remove("open"); document.body.style.overflow=""; renderIncList(); }
+function renderIncDetail(id){
+  const inc=incubators.find(x=>x.id===id); if(!inc) return;
+  document.getElementById("idName").textContent=inc.name;
+  document.getElementById("idSp").textContent=`${inc.temp.toFixed(1)}°C · ${inc.rh}% RH · ${turnLabel(inc.turnType)}`;
+  const assigned=eggs.filter(e=>e.incubatorId===inc.id), avg=avgFit(assigned,inc);
+  const rows=assigned.map(e=>{
+    const a=analyse(e), fs=fitScore(e,a,inc), rhI=a.suggestedRH?Math.round(a.suggestedRH.clamped)+"%":(a.lastRH!=null?a.lastRH+"%":"—");
+    return `<tr onclick="closeIncDetail();openDetail('${e.id}')" style="cursor:pointer">
+      <td class="l">${esc(e.name||spName(e.species))}</td><td>${(e.temp||37.5).toFixed(1)}°C</td><td>${rhI}</td>
+      <td><span class="dev ${fs==null?"":(fs>=80?"on":fs>=60?"down":"up")}">${fs==null?"—":fs+"%"}</span></td></tr>`;
+  }).join("");
+  const tableBlock=assigned.length?`<table><thead><tr><th class="l">${t("eggsWord")}</th><th>${t("idealTempL")}</th><th>${t("idealRhL")}</th><th>${t("matchL")}</th></tr></thead><tbody>${rows}</tbody></table>`:`<div class="empty"><b>${t("incNoEggs")}</b></div>`;
+  let turnBlock;
+  if(inc.turnType!=="auto360"){
+    const td=today(), cnt=(inc.turns&&inc.turns.date===td)?inc.turns.count:0;
+    turnBlock=`<div class="timeline">🔄 ${isRTL()?TURN_INFO[inc.turnType].ar:TURN_INFO[inc.turnType].en}<br>${t("turnsToday")}: <b>${cnt}</b></div>
+      <button class="btn" style="margin-top:10px;width:100%" onclick="logTurn('${inc.id}')">↻ ${t("logTurn")}</button>`;
+  } else turnBlock=`<div class="timeline">🔄 ${isRTL()?TURN_INFO.auto360.ar:TURN_INFO.auto360.en}</div>`;
+  document.getElementById("incDetailBody").innerHTML=
+    `<div class="verdict v-ok"><div class="big"><span class="dot"></span>${t("avgMatch")}</div>
+     <div class="act">${avg==null?t("noEggsAssigned"):t("avgMatchMsg",{p:avg})}</div></div>
+     ${turnBlock}<div class="sectionlabel">${t("eggsWord")}</div>${tableBlock}`;
+}
+function logTurn(id){
+  const inc=incubators.find(x=>x.id===id); if(!inc) return;
+  const td=today(); if(!inc.turns||inc.turns.date!==td) inc.turns={date:td,count:0};
+  inc.turns.count++; saveIncs(); renderIncDetail(id);
+}
+function fillTurnHint(tt){ document.getElementById("turnHint").innerHTML="🔄 "+(isRTL()?TURN_INFO[tt].ar:TURN_INFO[tt].en); }
+function setTurnType(tt){ turnDraft=tt; document.querySelectorAll("#turnSeg button").forEach(b=>b.classList.toggle("on",b.dataset.tt===tt)); fillTurnHint(tt); }
+function openIncModal(id){
+  editIncId=id||null;
+  document.getElementById("incModalTitle").textContent=id?t("incEdit"):t("incNew");
+  if(id){
+    const i=incubators.find(x=>x.id===id);
+    document.getElementById("fi_name").value=i.name||"";
+    document.getElementById("fi_temp").value=i.temp;
+    document.getElementById("fi_rh").value=i.rh;
+    turnDraft=i.turnType||"manual180";
+    document.getElementById("incDelBtn").style.display="block";
+  } else {
+    document.getElementById("fi_name").value="";
+    document.getElementById("fi_temp").value="37.5";
+    document.getElementById("fi_rh").value="45";
+    turnDraft="manual180";
+    document.getElementById("incDelBtn").style.display="none";
+  }
+  setTurnType(turnDraft);
+  document.getElementById("incModal").classList.add("open");
+}
+function saveInc(){
+  const name=document.getElementById("fi_name").value.trim()||t("incNew");
+  const temp=parseFloat(document.getElementById("fi_temp").value)||37.5;
+  const rh=parseFloat(document.getElementById("fi_rh").value)||45;
+  if(editIncId){ Object.assign(incubators.find(x=>x.id===editIncId),{name,temp,rh,turnType:turnDraft}); }
+  else { incubators.unshift({id:uid(),name,temp,rh,turnType:turnDraft,turns:{date:"",count:0}}); }
+  saveIncs(); closeModal("incModal"); renderIncList();
+  if(editIncId&&document.getElementById("incDetail").classList.contains("open")) renderIncDetail(editIncId);
+  toast(editIncId?t("incUpdated"):t("incAdded"));
+}
+function deleteInc(){
+  if(!editIncId) return; if(!confirm(t("confirmDelInc"))) return;
+  eggs.forEach(e=>{ if(e.incubatorId===editIncId) e.incubatorId=null; }); save();
+  incubators=incubators.filter(i=>i.id!==editIncId); saveIncs(); closeModal("incModal");
+  document.getElementById("incDetail").classList.remove("open"); document.body.style.overflow="";
+  renderIncList(); toast(t("incDeleted"));
 }
 
 /* ============ measure modal ============ */
@@ -893,6 +1109,10 @@ const SOURCES=[
   {n:9,a:"Horstmann Trust — Fresh-weight & daily weight-loss calculators",u:"https://vultures.ngo/egg-incubation-calculator/"},
   {n:10,a:"Rahn, H. & Ar, A. (1974) — The avian egg: incubation time and water loss. Condor 76:147–152 (water-vapor-conductance law used for the RH target)",u:"https://academic.oup.com/condor/article-abstract/76/2/147/5205287"},
   {n:11,a:"Ar, A. & Rahn, H. (1980) — Water in the avian egg: overall budget of incubation. Am. Zool. 20:373–384",u:"https://academic.oup.com/icb/article/20/2/373/2137009"},
+  {n:12,a:"El-Ashram (EmTech) — Review: turning angle ~43–45°; hatchability falls ~6.6/15.5/19.7% at 12×/6×/3× per day vs a 24×/day baseline",u:"https://www.emtech-systems.com/technical-talk/egg-turning-during-incubation-a-review-by-mohamed-mostafa-el-ashram/"},
+  {n:13,a:"Petersime — The critical role of egg turning",u:"https://www.petersime.com/expertise/the-critical-role-of-egg-turning-essential-insights"},
+  {n:14,a:"Eggbloom — Incubator turner angle, frequency, calibration, when to stop",u:"https://www.eggbloom.com/egg-incubator-turner-angle-frequency-calibration-when-to-Stop"},
+  {n:15,a:"Tona et al. — Effect of egg turning angle & frequency on hatchability (PubMed)",u:"https://pubmed.ncbi.nlm.nih.gov/16903474/"},
 ];
 const INFO_EN=`
 <h3>The idea in one line</h3>
@@ -910,6 +1130,9 @@ const INFO_EN=`
 </ul>
 <p>Temperature also interacts with loss: run warm and the chick develops faster, hatches early, with less time for water loss; run cool and hatch lags [7]. So fix weight loss with humidity, and treat temperature as the schedule.</p>
 <div class="note">⚠️ Numbers are general guidance from the sources below, not species-exact prescriptions. Calibrate your own incubator, verify at egg height, and keep records per clutch.</div>
+<h3>Turning</h3>
+<p>Turning stops the embryo sticking to the shell membrane. The angle that matters is <b>~43–45° from vertical, each way</b> [12][14][15] — hand-turners tilt to that point, cradle/rocker turners swing through it, roller turners rotate continuously.</p>
+<p>Frequency matters more than most people expect: poultry trials show hatchability drops <b>~6.6% at 12×/day, ~15.5% at 6×/day, ~19.7% at 3×/day</b> versus a 24×/day baseline [12]. For hand-turning that means <b>5–7 times/day minimum, an odd number</b> so the egg ends each night on the side it didn't sleep on before [13][14]. Parrot-specific sources note parrot eggs are often turned even more frequently than poultry, especially in week 1 [3][7]. Always stop turning at lockdown.</p>
 <h3>Sources</h3>`;
 const INFO_AR=`
 <h3>الفكرة في سطر</h3>
@@ -927,6 +1150,9 @@ const INFO_AR=`
 </ul>
 <p>تتفاعل الحرارة مع الفقد: الحرارة المرتفعة تُسرّع النمو وتُبكّر الفقس بوقت أقل لفقد الماء؛ والمنخفضة تؤخّره [7]. لذا اضبط الفقد بالرطوبة، واعتبر الحرارة جدولًا زمنيًا.</p>
 <div class="note">⚠️ الأرقام إرشاد عام من المصادر أدناه، وليست وصفة دقيقة لكل نوع. عايِر حاضنتك، وتحقّق عند مستوى البيض، واحتفظ بسجلات لكل وجبة بيض.</div>
+<h3>التقليب</h3>
+<p>التقليب يمنع التصاق الجنين بغشاء القشرة. الزاوية المهمة هي <b>~43–45° عن الوضع الرأسي لكل جهة</b> [12][14][15] — المُقلِّب اليدوي يميل إلى تلك النقطة، والمُقلِّب الأرجوحي يتمايل خلالها، والمُدوِّر الأسطواني يدور باستمرار.</p>
+<p>التكرار أهم مما يتوقّع كثيرون: تجارب الدواجن تُظهر أن الفقس ينخفض <b>~6.6٪ عند 12 مرة/يوم، ~15.5٪ عند 6 مرات/يوم، ~19.7٪ عند 3 مرات/يوم</b> مقارنة بأساس 24 مرة/يوم [12]. للتقليب اليدوي يعني ذلك <b>5–7 مرات/يوم كحد أدنى، بعدد فردي</b> لتنتهي البيضة كل ليلة على جانب مختلف عن الليلة السابقة [13][14]. مصادر خاصة بالببغاوات تذكر أن بيضها يُقلَّب أحيانًا أكثر من الدواجن، خصوصًا في الأسبوع الأول [3][7]. يتوقف التقليب دائمًا عند الإغلاق.</p>
 <h3>المصادر</h3>`;
 function renderInfo(){
   const body=isRTL()?INFO_AR:INFO_EN;
