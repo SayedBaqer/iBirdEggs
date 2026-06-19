@@ -308,11 +308,13 @@ const T={
   logT:"Weigh-in log", add:"Add", ics:"Reminders", vsIdeal:"vs ideal", rh:"RH", noLogs:"No weigh-ins yet.",
   holdSteady:"Hold humidity steady.", raiseH:"Raise humidity", lowerH:"Lower humidity",
   onLine:"Right on the line ({s} vs ideal). <b>Hold humidity steady.</b> Projected loss at pip: <b>{p}%</b>.",
-  tooFast:"Lost <b>{o}% too much</b> — drying too fast. <b>Raise humidity</b> ~3–5%{rh} and re-weigh in 2–3 days. On this trend it hits <b>{p}%</b> by pip (want {t}%).",
-  tooSlow:"Lost <b>{o}% too little</b> — drying too slow. <b>Lower humidity</b> ~3–5%{rh} or open a vent, then re-weigh in 2–3 days. On this trend it reaches only <b>{p}%</b> by pip (want {t}%).",
+  tooFast:"Lost <b>{o}% too much</b> — drying too fast. <b>Raise humidity ~{step}%</b>{rh} and re-weigh in 2–3 days. On this trend it hits <b>{p}%</b> by pip (want {t}%).",
+  tooSlow:"Lost <b>{o}% too little</b> — drying too slow. <b>Lower humidity ~{step}%</b>{rh} or open a vent, then re-weigh in 2–3 days. On this trend it reaches only <b>{p}%</b> by pip (want {t}%).",
   rhFromTo:" (from {a}% → try {b}%)",
   fastTemp:" Humidity is the main lever; only if RH is already maxed, a slightly higher temp shortens incubation (less time to lose) — change temp cautiously.",
   slowTemp:" Humidity is the main lever; only if RH is already at minimum, a slightly lower temp lengthens incubation — change temp cautiously.",
+  severeFastTemp:" <b>Gap is large</b> — humidity alone may not catch up in time. Also nudge air temp <b>+0.1–0.2°C</b> (speeds development, less time to lose water) and recheck in 2 days.",
+  severeSlowTemp:" <b>Gap is large</b> — humidity alone may not catch up in time. Also nudge air temp <b>−0.1–0.2°C</b> (slows development, more time to lose water) and recheck in 2 days.",
   overTarget:" ⚠️ Already past the {t}% total target — you can't undo lost water. Maximise humidity now (e.g. egg in a vented bag with damp sterile gauze, aired daily) to stop further loss.",
   waitMsg:"Record the fresh weight on setting day, then weigh on schedule. The ideal egg should weigh <b>{w}g</b> today ({l}% lost).",
   lockMsg:"Past pip day {p}. Stop turning and <b>raise humidity to 65–70%</b>. Weight now jumps as the chick breathes — that's normal, stop tracking loss.",
@@ -362,11 +364,13 @@ const T={
   logT:"سجل الأوزان", add:"إضافة", ics:"تذكيرات", vsIdeal:"مقابل المثالي", rh:"الرطوبة", noLogs:"لا أوزان بعد.",
   holdSteady:"حافظ على الرطوبة ثابتة.", raiseH:"ارفع الرطوبة", lowerH:"اخفض الرطوبة",
   onLine:"على الخط تمامًا ({s} عن المثالي). <b>حافظ على الرطوبة ثابتة.</b> الفقد المتوقع عند النقر: <b>{p}٪</b>.",
-  tooFast:"فقدت <b>{o}٪ زيادة</b> — يجف بسرعة. <b>ارفع الرطوبة</b> ~3–5٪{rh} وأعد الوزن خلال 2–3 أيام. بهذا المعدل يصل إلى <b>{p}٪</b> عند النقر (المطلوب {t}٪).",
-  tooSlow:"فقدت <b>{o}٪ أقل من اللازم</b> — يجف ببطء. <b>اخفض الرطوبة</b> ~3–5٪{rh} أو افتح فتحة تهوية، ثم أعد الوزن خلال 2–3 أيام. بهذا المعدل لا يبلغ سوى <b>{p}٪</b> عند النقر (المطلوب {t}٪).",
+  tooFast:"فقدت <b>{o}٪ زيادة</b> — يجف بسرعة. <b>ارفع الرطوبة ~{step}٪</b>{rh} وأعد الوزن خلال 2–3 أيام. بهذا المعدل يصل إلى <b>{p}٪</b> عند النقر (المطلوب {t}٪).",
+  tooSlow:"فقدت <b>{o}٪ أقل من اللازم</b> — يجف ببطء. <b>اخفض الرطوبة ~{step}٪</b>{rh} أو افتح فتحة تهوية، ثم أعد الوزن خلال 2–3 أيام. بهذا المعدل لا يبلغ سوى <b>{p}٪</b> عند النقر (المطلوب {t}٪).",
   rhFromTo:" (من {a}٪ ← جرّب {b}٪)",
   fastTemp:" الرطوبة هي الأداة الأساسية؛ وفقط إذا كانت الرطوبة في أقصاها، فإن رفع الحرارة قليلًا يقصّر التحضين (وقت أقل للفقد) — غيّر الحرارة بحذر.",
   slowTemp:" الرطوبة هي الأداة الأساسية؛ وفقط إذا كانت الرطوبة في أدناها، فإن خفض الحرارة قليلًا يطيل التحضين — غيّر الحرارة بحذر.",
+  severeFastTemp:" <b>الفارق كبير</b> — قد لا تكفي الرطوبة وحدها للتعويض في الوقت المتاح. اضبط أيضًا حرارة الهواء <b>+0.1–0.2°م</b> (يسرّع النمو، وقت أقل لفقد الماء) وأعد الفحص خلال يومين.",
+  severeSlowTemp:" <b>الفارق كبير</b> — قد لا تكفي الرطوبة وحدها للتعويض في الوقت المتاح. اضبط أيضًا حرارة الهواء <b>−0.1–0.2°م</b> (يبطّئ النمو، وقت أطول لفقد الماء) وأعد الفحص خلال يومين.",
   overTarget:" ⚠️ تجاوزت هدف الفقد الكلي {t}٪ — لا يمكن إعادة الماء المفقود. ارفع الرطوبة لأقصاها الآن (مثل وضع البيضة في كيس مثقوب مع شاش معقّم مبلّل، يُهوّى يوميًا) لإيقاف المزيد من الفقد.",
   waitMsg:"سجّل الوزن الطازج يوم الوضع، ثم زِن حسب الجدول. يُفترض أن تزن البيضة المثالية <b>{w}غ</b> اليوم (فُقد {l}٪).",
   lockMsg:"تجاوزت يوم النقر {p}. أوقف التقليب و<b>ارفع الرطوبة إلى 65–70٪</b>. يقفز الوزن الآن مع تنفّس الفرخ — هذا طبيعي، أوقف تتبّع الفقد.",
@@ -601,10 +605,12 @@ function verdictHTML(e,a){
   }
   const cls="v-"+STC[a.status]; let action;
   const off=Math.abs(a.dev).toFixed(1);
+  const step=Math.max(3,Math.min(12,Math.round(Math.abs(a.dev)*1.4)));
+  const severe=Math.abs(a.dev)>a.tol*2.2;
   const rhtxt=(delta)=>a.lastRH!=null?t("rhFromTo",{a:a.lastRH,b:Math.max(0,+a.lastRH+delta)}):"";
   if(a.status==="ok") action=t("onLine",{s:(a.dev>=0?"+":"")+a.dev.toFixed(1),p:a.proj.toFixed(1)});
-  else if(a.status==="fast") action=t("tooFast",{o:off,rh:rhtxt(4),p:a.proj.toFixed(1),t:e.target})+(a.aLoss>=e.target?t("overTarget",{t:e.target}):"")+t("fastTemp");
-  else action=t("tooSlow",{o:off,rh:rhtxt(-4),p:a.proj.toFixed(1),t:e.target})+t("slowTemp");
+  else if(a.status==="fast") action=t("tooFast",{o:off,step,rh:rhtxt(step),p:a.proj.toFixed(1),t:e.target})+(a.aLoss>=e.target?t("overTarget",{t:e.target}):"")+(severe?t("severeFastTemp"):t("fastTemp"));
+  else action=t("tooSlow",{o:off,step,rh:rhtxt(-step),p:a.proj.toFixed(1),t:e.target})+(severe?t("severeSlowTemp"):t("slowTemp"));
   return `<div class="verdict ${cls}"><div class="big"><span class="dot"></span>${stLabel(a.status)} · ${t("verdictDay",{d:a.lastDay})}</div>
     <div class="act">${action}</div>${tempBlock(e,a)}</div>`;
 }
