@@ -310,6 +310,9 @@ const T={
   onLine:"Right on the line ({s} vs ideal). <b>Hold humidity steady.</b> Projected loss at pip: <b>{p}%</b>.",
   tooFast:"Lost <b>{o}% too much</b> — drying too fast. <b>Raise humidity ~{step}%</b>{rh} and re-weigh in 2–3 days. On this trend it hits <b>{p}%</b> by pip (want {t}%).",
   tooSlow:"Lost <b>{o}% too little</b> — drying too slow. <b>Lower humidity ~{step}%</b>{rh} or open a vent, then re-weigh in 2–3 days. On this trend it reaches only <b>{p}%</b> by pip (want {t}%).",
+  tooFastCalc:"Lost <b>{o}% too much</b> — drying too fast. From your own logged humidity/temperature: <b>set RH to ≈{rh}%</b> to land on {t}% by pip (now projecting {p}%). Re-weigh in 2–3 days.",
+  tooSlowCalc:"Lost <b>{o}% too little</b> — drying too slow. From your own logged humidity/temperature: <b>set RH to ≈{rh}%</b> to land on {t}% by pip (now projecting only {p}%). Re-weigh in 2–3 days.",
+  noDataHint:" Log humidity & temperature at each weigh-in — with 2+ logged readings this becomes a calculated RH target instead of a rough estimate.",
   rhFromTo:" (from {a}% → try {b}%)",
   fastTemp:" Humidity is the main lever; only if RH is already maxed, a slightly higher temp shortens incubation (less time to lose) — change temp cautiously.",
   slowTemp:" Humidity is the main lever; only if RH is already at minimum, a slightly lower temp lengthens incubation — change temp cautiously.",
@@ -366,6 +369,9 @@ const T={
   onLine:"على الخط تمامًا ({s} عن المثالي). <b>حافظ على الرطوبة ثابتة.</b> الفقد المتوقع عند النقر: <b>{p}٪</b>.",
   tooFast:"فقدت <b>{o}٪ زيادة</b> — يجف بسرعة. <b>ارفع الرطوبة ~{step}٪</b>{rh} وأعد الوزن خلال 2–3 أيام. بهذا المعدل يصل إلى <b>{p}٪</b> عند النقر (المطلوب {t}٪).",
   tooSlow:"فقدت <b>{o}٪ أقل من اللازم</b> — يجف ببطء. <b>اخفض الرطوبة ~{step}٪</b>{rh} أو افتح فتحة تهوية، ثم أعد الوزن خلال 2–3 أيام. بهذا المعدل لا يبلغ سوى <b>{p}٪</b> عند النقر (المطلوب {t}٪).",
+  tooFastCalc:"فقدت <b>{o}٪ زيادة</b> — يجف بسرعة. بالاستناد إلى رطوبتك وحرارتك المسجَّلة: <b>اضبط الرطوبة على ≈{rh}٪</b> للوصول إلى {t}٪ عند النقر (المتوقَّع الآن {p}٪). أعد الوزن خلال 2–3 أيام.",
+  tooSlowCalc:"فقدت <b>{o}٪ أقل من اللازم</b> — يجف ببطء. بالاستناد إلى رطوبتك وحرارتك المسجَّلة: <b>اضبط الرطوبة على ≈{rh}٪</b> للوصول إلى {t}٪ عند النقر (المتوقَّع الآن فقط {p}٪). أعد الوزن خلال 2–3 أيام.",
+  noDataHint:" سجّل الرطوبة والحرارة عند كل وزن — مع قراءتين أو أكثر تتحول هذه إلى هدف رطوبة محسوب بدل تقدير تقريبي.",
   rhFromTo:" (من {a}٪ ← جرّب {b}٪)",
   fastTemp:" الرطوبة هي الأداة الأساسية؛ وفقط إذا كانت الرطوبة في أقصاها، فإن رفع الحرارة قليلًا يقصّر التحضين (وقت أقل للفقد) — غيّر الحرارة بحذر.",
   slowTemp:" الرطوبة هي الأداة الأساسية؛ وفقط إذا كانت الرطوبة في أدناها، فإن خفض الحرارة قليلًا يطيل التحضين — غيّر الحرارة بحذر.",
@@ -457,6 +463,27 @@ function targetLossAt(e,tday){ const p=e.pip||e.days; return e.target*Math.min(M
 function targetWeightAt(e,tday){ return e.fresh*(1-targetLossAt(e,tday)/100); }
 function lossPct(e,w){ return (e.fresh-w)/e.fresh*100; }
 
+/* Rahn & Ar water-vapor-conductance law: loss rate (g/day) = G * vapor-pressure deficit (torr).
+   G is a fixed shell property — estimated here from the egg's own logged weight/RH/temp,
+   then solved in reverse for the RH that would hit the remaining target by pip. [10][11] */
+function svpTorr(tC){ return 0.61078*Math.exp(17.27*tC/(tC+237.3))*7.50062; }
+function estConductance(e,ms){
+  let num=0,den=0;
+  for(let i=1;i<ms.length;i++){
+    const dt=dayDiff(ms[i-1].date,ms[i].date); if(dt<=0) continue;
+    const dw=ms[i-1].weight-ms[i].weight; if(dw<=0) continue;
+    const rh=(ms[i].rh!=null&&ms[i].rh!=="")?ms[i].rh:((ms[i-1].rh!=null&&ms[i-1].rh!=="")?ms[i-1].rh:null); if(rh==null) continue;
+    const t=(ms[i].temp!=null&&ms[i].temp!=="")?ms[i].temp:((ms[i-1].temp!=null&&ms[i-1].temp!=="")?ms[i-1].temp:(e.temp||37.5));
+    const dp=svpTorr(t)*(1-rh/100); if(dp<=0.05) continue;
+    num+=dw; den+=dp*dt;
+  }
+  return den>0 ? num/den : null;
+}
+function rhForRate(G,airT,rateNeeded){
+  const svp=svpTorr(airT), raw=100*(1-(rateNeeded/G)/svp);
+  return {raw, clamped:Math.max(20,Math.min(85,raw))};
+}
+
 function scheduleDays(e){
   const p=e.pip||e.days, s=e.schedule||{mode:"everyN",n:3};
   let arr=[];
@@ -498,6 +525,12 @@ function analyse(e){
     else if(dev>tol) out.status="fast";
     else if(dev<-tol) out.status="slow";
     else out.status="ok";
+    const G=estConductance(e,ms);
+    if(G && out.status!=="lockdown"){
+      const daysLeft2=Math.max(0.5,p-lt), remGrams=e.fresh*(e.target-aLoss)/100;
+      const airTRef=out.lastTemp!=null?+out.lastTemp:(e.temp||37.5);
+      out.G=G; out.suggestedRH=rhForRate(G,airTRef,remGrams/daysLeft2);
+    }
   }
   return out;
 }
@@ -605,12 +638,19 @@ function verdictHTML(e,a){
   }
   const cls="v-"+STC[a.status]; let action;
   const off=Math.abs(a.dev).toFixed(1);
-  const step=Math.max(3,Math.min(12,Math.round(Math.abs(a.dev)*1.4)));
-  const severe=Math.abs(a.dev)>a.tol*2.2;
-  const rhtxt=(delta)=>a.lastRH!=null?t("rhFromTo",{a:a.lastRH,b:Math.max(0,+a.lastRH+delta)}):"";
+  const overT=a.aLoss>=e.target?t("overTarget",{t:e.target}):"";
   if(a.status==="ok") action=t("onLine",{s:(a.dev>=0?"+":"")+a.dev.toFixed(1),p:a.proj.toFixed(1)});
-  else if(a.status==="fast") action=t("tooFast",{o:off,step,rh:rhtxt(step),p:a.proj.toFixed(1),t:e.target})+(a.aLoss>=e.target?t("overTarget",{t:e.target}):"")+(severe?t("severeFastTemp"):t("fastTemp"));
-  else action=t("tooSlow",{o:off,step,rh:rhtxt(-step),p:a.proj.toFixed(1),t:e.target})+(severe?t("severeSlowTemp"):t("slowTemp"));
+  else if(a.suggestedRH){
+    const rh=Math.round(a.suggestedRH.clamped), severe=a.suggestedRH.raw<20||a.suggestedRH.raw>85;
+    const key=a.status==="fast"?"tooFastCalc":"tooSlowCalc", tempKey=a.status==="fast"?"severeFastTemp":"severeSlowTemp";
+    action=t(key,{o:off,rh,p:a.proj.toFixed(1),t:e.target})+overT+(severe?t(tempKey):"");
+  } else {
+    const step=Math.max(3,Math.min(12,Math.round(Math.abs(a.dev)*1.4)));
+    const severe=Math.abs(a.dev)>a.tol*2.2;
+    const rhtxt=(delta)=>a.lastRH!=null?t("rhFromTo",{a:a.lastRH,b:Math.max(0,+a.lastRH+delta)}):"";
+    if(a.status==="fast") action=t("tooFast",{o:off,step,rh:rhtxt(step),p:a.proj.toFixed(1),t:e.target})+overT+(severe?t("severeFastTemp"):t("fastTemp"))+t("noDataHint");
+    else action=t("tooSlow",{o:off,step,rh:rhtxt(-step),p:a.proj.toFixed(1),t:e.target})+(severe?t("severeSlowTemp"):t("slowTemp"))+t("noDataHint");
+  }
   return `<div class="verdict ${cls}"><div class="big"><span class="dot"></span>${stLabel(a.status)} · ${t("verdictDay",{d:a.lastDay})}</div>
     <div class="act">${action}</div>${tempBlock(e,a)}</div>`;
 }
@@ -851,6 +891,8 @@ const SOURCES=[
   {n:7,a:"Voren's Aviaries — Temperature/humidity interaction with weight loss",u:"https://voren.com/articles/parrot-incubation-demystified/"},
   {n:8,a:"Poultry Keeper — Weight loss & the linear target line (stop before internal pip)",u:"https://poultrykeeper.com/incubation-brooding/egg-incubation-weight-loss/"},
   {n:9,a:"Horstmann Trust — Fresh-weight & daily weight-loss calculators",u:"https://vultures.ngo/egg-incubation-calculator/"},
+  {n:10,a:"Rahn, H. & Ar, A. (1974) — The avian egg: incubation time and water loss. Condor 76:147–152 (water-vapor-conductance law used for the RH target)",u:"https://academic.oup.com/condor/article-abstract/76/2/147/5205287"},
+  {n:11,a:"Ar, A. & Rahn, H. (1980) — Water in the avian egg: overall budget of incubation. Am. Zool. 20:373–384",u:"https://academic.oup.com/icb/article/20/2/373/2137009"},
 ];
 const INFO_EN=`
 <h3>The idea in one line</h3>
@@ -859,7 +901,7 @@ const INFO_EN=`
 <p>For parrots the classic figure is <b>15% (±3%)</b> of fresh weight by internal pip [1][2]. Many altricial species sit in a 12–16% band [3]; large cockatoos can need more (e.g. Moluccan 16–20%, Eclectus 14–17%) [6].</p>
 <h3>The rule you follow</h3>
 <p>Draw a straight line from fresh weight (day 0) down to <i>fresh − target%</i> at pip day (≈ hatch − 3). Each weigh-in: if you've lost <b>less</b> than the line → <b>lower humidity</b> (or open a vent); if <b>more</b> → <b>raise humidity</b> [8]. Stop tracking at internal pip — loss then jumps ~5% as the chick breathes [8].</p>
-<div class="note">This app computes that line for you, plots your weigh-ins on it, and converts the gap into a raise/lower-humidity instruction plus a projection of where you'll land at pip.</div>
+<div class="note">This app computes that line for you, plots your weigh-ins on it, and converts the gap into a raise/lower-humidity instruction plus a projection of where you'll land at pip. With 2+ logged RH/temp readings it goes further: it back-calculates the egg's own water-vapor conductance (loss rate ∝ vapor-pressure deficit, per Rahn &amp; Ar [10][11]) and solves for the RH that would close the remaining gap by pip — a calculated target, not a fixed step.</div>
 <h3>Does temperature need adjusting?</h3>
 <p>Mostly you hold temperature steady (~37.5 °C forced-air; parrots often 37.0–37.5 °C [3]) and let humidity do the weight-loss work. But temperature has two real adjustments:</p>
 <ul>
@@ -876,7 +918,7 @@ const INFO_AR=`
 <p>للببغاوات الرقم الكلاسيكي هو <b>15٪ (±3٪)</b> من الوزن الطازج حتى النقر الداخلي [1][2]. كثير من الأنواع غير الناضجة عند الفقس ضمن نطاق 12–16٪ [3]؛ وقد تحتاج الكوكاتو الكبيرة أكثر (مثل المولوكي 16–20٪، الإكلكتوس 14–17٪) [6].</p>
 <h3>القاعدة المتّبعة</h3>
 <p>ارسم خطًا مستقيمًا من الوزن الطازج (اليوم 0) نزولًا إلى <i>الطازج − نسبة الهدف٪</i> عند يوم النقر (≈ الفقس − 3). في كل وزن: إن فقدت <b>أقل</b> من الخط ← <b>اخفض الرطوبة</b> (أو افتح تهوية)؛ وإن فقدت <b>أكثر</b> ← <b>ارفع الرطوبة</b> [8]. أوقف التتبّع عند النقر الداخلي — إذ يقفز الفقد ~5٪ مع تنفّس الفرخ [8].</p>
-<div class="note">يحسب هذا التطبيق ذلك الخط نيابةً عنك، ويرسم أوزانك عليه، ويحوّل الفارق إلى تعليمة «ارفع/اخفض الرطوبة» مع توقّع لما ستصل إليه عند النقر.</div>
+<div class="note">يحسب هذا التطبيق ذلك الخط نيابةً عنك، ويرسم أوزانك عليه، ويحوّل الفارق إلى تعليمة «ارفع/اخفض الرطوبة» مع توقّع لما ستصل إليه عند النقر. ومع تسجيل قراءتين أو أكثر للرطوبة/الحرارة، يذهب أبعد: يحسب نفاذية البيضة لبخار الماء الخاصة بها (معدل الفقد يتناسب مع فارق ضغط البخار، حسب Rahn و Ar [10][11])، ويحل المعادلة لإيجاد الرطوبة التي تُغلق الفارق المتبقي عند النقر — هدف محسوب لا خطوة ثابتة.</div>
 <h3>هل تحتاج الحرارة إلى ضبط؟</h3>
 <p>غالبًا تُبقي الحرارة ثابتة (~37.5°م للهواء القسري؛ الببغاوات غالبًا 37.0–37.5°م [3]) وتترك الرطوبة تؤدي عمل الفقد. لكن للحرارة ضبطان حقيقيان:</p>
 <ul>
