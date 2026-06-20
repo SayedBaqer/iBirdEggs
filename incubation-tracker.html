@@ -32,7 +32,7 @@
   .tag{font-size:10.5px;letter-spacing:.30em;color:var(--heat);text-transform:uppercase;margin-top:2px;font-weight:600;}
   [dir=rtl] .tag{letter-spacing:0;}
   .toggles{display:flex;gap:7px;flex:none;}
-  .chip{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:9px;height:38px;min-width:38px;padding:0 11px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;}
+  .chip{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:9px;height:42px;min-width:42px;padding:0 11px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;}
   .chip.on{color:var(--heat);border-color:var(--heat-d);}
   .sub{font-size:12px;color:var(--muted);margin-top:9px;line-height:1.5;}
 
@@ -76,12 +76,12 @@
   .screen.open{display:block;}
   .swrap{max-width:680px;margin:0 auto;padding:0 16px calc(44px + env(safe-area-inset-bottom));}
   .shead{position:sticky;top:0;background:var(--bg);padding:calc(16px + env(safe-area-inset-top)) 0 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);z-index:5;}
-  .back{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;width:40px;height:40px;font-size:20px;flex:none;}
+  .back{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:11px;width:44px;height:44px;font-size:20px;flex:none;}
   [dir=rtl] .back{transform:scaleX(-1);}
   .stitle{flex:1;min-width:0;}
   .stitle h2{margin:0;font-size:18px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .stitle .sp{font-size:12px;color:var(--muted);margin-top:2px;}
-  .iconbtn{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:10px;width:40px;height:40px;font-size:16px;flex:none;}
+  .iconbtn{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:11px;width:44px;height:44px;font-size:16px;flex:none;}
 
   .verdict{border-radius:16px;padding:16px;margin:16px 0;border:1px solid var(--line);background:var(--panel);}
   .verdict .big{font-size:15px;font-weight:800;display:flex;align-items:center;gap:9px;}
@@ -134,7 +134,7 @@
   .modal.open{display:flex;}
   .sheet{position:relative;background:var(--bg2);width:100%;max-width:680px;border-radius:20px 20px 0 0;border-top:1px solid var(--line);padding:8px 18px calc(24px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
   .grab{width:38px;height:4px;background:var(--line);border-radius:2px;margin:8px auto 14px;}
-  .sheetclose{position:absolute;top:14px;inset-inline-end:14px;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:50%;width:32px;height:32px;font-size:14px;display:flex;align-items:center;justify-content:center;z-index:1;}
+  .sheetclose{position:absolute;top:10px;inset-inline-end:10px;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:50%;width:40px;height:40px;font-size:15px;display:flex;align-items:center;justify-content:center;z-index:1;}
   .sheet h3{margin:0 0 4px;font-size:17px;}
   .sheet .hint{font-size:12px;color:var(--muted);margin:0 0 14px;line-height:1.5;}
   label{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:13px 0 6px;}
@@ -1181,6 +1181,41 @@ function closeModal(id){ document.getElementById(id).classList.remove("open"); }
 document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",ev=>{ if(ev.target===m) m.classList.remove("open"); }));
 let toastT; function toast(msg){ const el=document.getElementById("toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2000); }
 window.addEventListener("resize",()=>{ if(currentId&&document.getElementById("detail").classList.contains("open")){ const e=eggs.find(x=>x.id===currentId); if(e) requestAnimationFrame(()=>drawChart(e,analyse(e))); } });
+
+/* Swipe-down-to-dismiss on bottom sheets — only fires once the sheet is
+   already scrolled to its top, so it never fights normal form scrolling. */
+function enableSheetSwipe(sheetEl){
+  let startY=null, atTop=false;
+  sheetEl.addEventListener("touchstart",ev=>{ startY=ev.touches[0].clientY; atTop=sheetEl.scrollTop<=0; },{passive:true});
+  sheetEl.addEventListener("touchend",ev=>{
+    if(startY==null) return;
+    const dy=ev.changedTouches[0].clientY-startY;
+    if(atTop && dy>70 && sheetEl.scrollTop<=0){ const modal=sheetEl.closest(".modal"); if(modal) modal.classList.remove("open"); }
+    startY=null;
+  },{passive:true});
+}
+document.querySelectorAll(".sheet").forEach(enableSheetSwipe);
+
+/* Edge-swipe-to-go-back on full-screen views — there is no browser back
+   gesture once this runs as an installed standalone app. */
+function enableScreenBackSwipe(screenEl,closeFn){
+  let startX=null,startY=null;
+  screenEl.addEventListener("touchstart",ev=>{
+    const tch=ev.touches[0], near=isRTL()?tch.clientX>window.innerWidth-24:tch.clientX<24;
+    if(near){ startX=tch.clientX; startY=tch.clientY; } else startX=null;
+  },{passive:true});
+  screenEl.addEventListener("touchend",ev=>{
+    if(startX==null) return;
+    const tch=ev.changedTouches[0], dx=tch.clientX-startX, dy=Math.abs(tch.clientY-startY);
+    const passed=isRTL()?dx<-70:dx>70;
+    if(passed && dy<60) closeFn();
+    startX=null;
+  },{passive:true});
+}
+enableScreenBackSwipe(document.getElementById("detail"),closeDetail);
+enableScreenBackSwipe(document.getElementById("infoScreen"),closeInfo);
+enableScreenBackSwipe(document.getElementById("incScreen"),closeIncList);
+enableScreenBackSwipe(document.getElementById("incDetail"),closeIncDetail);
 
 paintChrome(); renderList();
 </script>
