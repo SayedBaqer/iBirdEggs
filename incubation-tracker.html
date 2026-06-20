@@ -182,10 +182,7 @@
       <div class="toggles">
         <button class="chip" id="langBtn" onclick="toggleLang()">ع</button>
         <button class="chip" onclick="openIncList()" id="incBtn">📦</button>
-        <button class="chip" onclick="exportData()" id="t_backup">⤓</button>
-        <button class="chip" onclick="document.getElementById('importFile').click()" id="t_restore">↺</button>
         <button class="chip" onclick="openInfo()" id="infoBtn">ⓘ</button>
-        <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)">
       </div>
     </div>
     <p class="sub" id="t_sub"></p>
@@ -345,10 +342,8 @@ const T={
   tag:"Egg Weight-Loss Tracker",
   sub:"Weigh each egg, plot it against the ideal 15% loss line, and let the verdict tell you which way to move humidity (and when to touch temperature). Built for parrots & birds.",
   sumActive:"Incubating", sumAlert:"Need adjust", sumDue:"Weigh today",
-  newegg:"New egg", backup:"Backup", restore:"Restore",
-  backupHint:"Download all your eggs as a JSON file — your only copy, since data lives only in this browser.",
-  restoreHint:"Load a previously downloaded backup file (or move your data to another device/browser).",
-  foot:"Weight loss = moisture loss. Target ≈ 15% (±3%) of fresh weight by internal pip, then lockdown. Data stays on this device — use Backup to save a copy.",
+  newegg:"New egg",
+  foot:"Weight loss = moisture loss. Target ≈ 15% (±3%) of fresh weight by internal pip, then lockdown. Data stays on this device only.",
   emptyT:"No eggs yet", emptyB:"Tap “New egg”, enter the fresh weight on setting day, then weigh on your chosen schedule.",
   st_ok:"On target", st_fast:"Losing fast", st_slow:"Losing slow", st_wait:"Awaiting weigh-in", st_lock:"Lockdown",
   day:"Day", weight:"Weight", lost:"Lost", targetNow:"Target now",
@@ -399,7 +394,6 @@ const T={
   editMeas:"Edit weigh-in", measTitle:"Add weigh-in", measHint:"Ideal weight today: <b>{w}g</b> ({l}% lost).",
   mweightL:"Weight (g)", mdateL:"Date", mrhL:"Humidity % (opt)", mtempL:"Temp °C (opt)", mnoteL:"Note (opt)",
   saveMeas:"Save weigh-in", needWeight:"Enter a weight", measSaved:"Weigh-in saved",
-  backupDone:"Backup downloaded", restored:"Restored {n} eggs", badFile:"Could not read file",
   icsDone:"Reminders file downloaded", copied:"Summary copied", shareBtn:"Share",
   // incubators
   incTitle:"Incubators", incNew:"New incubator", incEdit:"Edit incubator",
@@ -422,10 +416,8 @@ const T={
   tag:"متتبّع فقدان وزن البيض",
   sub:"زِن كل بيضة وقارنها بخط الفقدان المثالي (15٪)، ودَع التقييم يخبرك باتجاه ضبط الرطوبة (ومتى تلمس الحرارة). مُصمَّم للببغاوات والطيور.",
   sumActive:"تحت التحضين", sumAlert:"تحتاج ضبطًا", sumDue:"وزن اليوم",
-  newegg:"بيضة جديدة", backup:"نسخة احتياطية", restore:"استعادة",
-  backupHint:"نزّل كل بيضاتك في ملف JSON — نسختك الوحيدة، لأن البيانات تبقى فقط في هذا المتصفح.",
-  restoreHint:"حمّل ملف نسخة احتياطية سابق (أو انقل بياناتك إلى جهاز/متصفح آخر).",
-  foot:"فقدان الوزن = فقدان الرطوبة. الهدف ≈ 15٪ (±3٪) من الوزن الطازج حتى النقر الداخلي، ثم الإغلاق. تبقى البيانات على هذا الجهاز — استخدم النسخ الاحتياطي للحفظ.",
+  newegg:"بيضة جديدة",
+  foot:"فقدان الوزن = فقدان الرطوبة. الهدف ≈ 15٪ (±3٪) من الوزن الطازج حتى النقر الداخلي، ثم الإغلاق. تبقى البيانات على هذا الجهاز فقط.",
   emptyT:"لا توجد بيضات بعد", emptyB:"اضغط «بيضة جديدة»، أدخل الوزن الطازج يوم الوضع، ثم زِنها حسب الجدول الذي تختاره.",
   st_ok:"على الهدف", st_fast:"فقدان سريع", st_slow:"فقدان بطيء", st_wait:"بانتظار الوزن", st_lock:"الإغلاق",
   day:"اليوم", weight:"الوزن", lost:"المفقود", targetNow:"الهدف الآن",
@@ -474,7 +466,6 @@ const T={
   editMeas:"تعديل الوزن", measTitle:"إضافة وزن", measHint:"الوزن المثالي اليوم: <b>{w}غ</b> (فُقد {l}٪).",
   mweightL:"الوزن (غ)", mdateL:"التاريخ", mrhL:"الرطوبة ٪ (اختياري)", mtempL:"الحرارة °م (اختياري)", mnoteL:"ملاحظة (اختياري)",
   saveMeas:"حفظ الوزن", needWeight:"أدخل الوزن", measSaved:"حُفظ الوزن",
-  backupDone:"تم تنزيل النسخة", restored:"تمت استعادة {n} بيضة", badFile:"تعذّر قراءة الملف",
   icsDone:"تم تنزيل ملف التذكيرات", copied:"نُسخ الملخّص", shareBtn:"مشاركة",
   incTitle:"الحاضنات", incNew:"حاضنة جديدة", incEdit:"تعديل الحاضنة",
   incNameL:"الاسم", incTempL:"الحرارة °م", incRhL:"الرطوبة ٪", turnTypeL:"نوع التقليب",
@@ -659,8 +650,6 @@ function paintChrome(){
   set("t_tag","tag"); set("t_sub","sub");
   set("t_sumActive","sumActive"); set("t_sumAlert","sumAlert"); set("t_sumDue","sumDue");
   set("t_newegg","newegg");
-  document.getElementById("t_backup").title=t("backupHint");
-  document.getElementById("t_restore").title=t("restoreHint");
   document.getElementById("t_foot").textContent=t("foot");
   set("t_infoTitle","infoTitle");
   // egg modal labels
@@ -1116,14 +1105,8 @@ function exportICS(id){
   download(v.join("\r\n"),"text/calendar","drydown-"+name.replace(/\s+/g,"_")+".ics"); toast(t("icsDone"));
 }
 
-/* ============ backup ============ */
+/* ============ file download helper ============ */
 function download(text,mime,fn){ const b=new Blob([text],{type:mime}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=fn; a.click(); URL.revokeObjectURL(u); }
-function exportData(){ download(JSON.stringify(eggs,null,2),"application/json","drydown-backup-"+today()+".json"); toast(t("backupDone")); }
-function importData(ev){
-  const f=ev.target.files[0]; if(!f) return; const r=new FileReader();
-  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(Array.isArray(d)){ eggs=d.map(e=>({...e,id:e.id||uid(),meas:e.meas||[]})); save(); renderList(); toast(t("restored",{n:eggs.length})); } else toast(t("badFile")); }catch(e){ toast(t("badFile")); } };
-  r.readAsText(f); ev.target.value="";
-}
 
 /* ============ info page ============ */
 const SOURCES=[
