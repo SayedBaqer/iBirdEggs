@@ -24,7 +24,7 @@
   [dir=rtl]{font-family:var(--sans);}
   .wrap{max-width:680px;margin:0 auto;padding:0 16px 96px;height:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
   header{padding:18px 0 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:linear-gradient(var(--bg),var(--bg) 72%,rgba(22,17,12,0));z-index:30;}
-  .toprow{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .toprow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
   .brand{display:flex;align-items:center;gap:11px;min-width:0;}
   .glyph{width:30px;height:38px;flex:none;}
   h1{font-size:18px;letter-spacing:.16em;font-weight:700;margin:0;text-transform:uppercase;}
@@ -182,7 +182,10 @@
       <div class="toggles">
         <button class="chip" id="langBtn" onclick="toggleLang()">ع</button>
         <button class="chip" onclick="openIncList()" id="incBtn">📦</button>
+        <button class="chip" onclick="exportData()" id="t_backup">⤓</button>
+        <button class="chip" onclick="document.getElementById('importFile').click()" id="t_restore">↺</button>
         <button class="chip" onclick="openInfo()" id="infoBtn">ⓘ</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)">
       </div>
     </div>
     <p class="sub" id="t_sub"></p>
@@ -196,9 +199,6 @@
 
   <div class="row-actions">
     <button class="btn" onclick="openEgg()"><span style="font-size:17px;line-height:0">＋</span> <span id="t_newegg"></span></button>
-    <button class="btn ghost" onclick="exportData()" id="t_backup">⤓ <span id="t_backupTxt"></span></button>
-    <button class="btn ghost" onclick="document.getElementById('importFile').click()" id="t_restore">↺ <span id="t_restoreTxt"></span></button>
-    <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)">
   </div>
 
   <div id="list"></div>
@@ -659,8 +659,8 @@ function paintChrome(){
   set("t_tag","tag"); set("t_sub","sub");
   set("t_sumActive","sumActive"); set("t_sumAlert","sumAlert"); set("t_sumDue","sumDue");
   set("t_newegg","newegg");
-  document.getElementById("t_backup").title=t("backupHint"); set("t_backupTxt","backup");
-  document.getElementById("t_restore").title=t("restoreHint"); set("t_restoreTxt","restore");
+  document.getElementById("t_backup").title=t("backupHint");
+  document.getElementById("t_restore").title=t("restoreHint");
   document.getElementById("t_foot").textContent=t("foot");
   set("t_infoTitle","infoTitle");
   // egg modal labels
