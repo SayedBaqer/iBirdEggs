@@ -357,6 +357,7 @@ const T={
   scheduleT:"Schedule by day", stageL:"Stage",
   stageIncub:"Incubation", stageLate:"Late incubation", stageLock:"Lockdown / hatcher",
   scheduleNote:"This is the starting plan, set once. Temp eases down slightly in late incubation only if your incubator runs warm as the embryo's own heat builds — skip it if temp already holds steady. The humidity shown is a starting point only: the verdict above (and each new weigh-in) tells you when and how far to actually move it from here.",
+  nowBadge:"now", planOnly:"plan", seeAbove:"see verdict above",
   pipLock:"Pip / lockdown ≈ day {d} ({date}) — raise RH to 65–70%.",
   hatch:"Expected hatch ≈ day {d} ({date})", toGo:"{n} days to go.", overdue:"due / overdue.",
   candle:"Candle around day {a} & day {b} to check the air cell.",
@@ -434,6 +435,7 @@ const T={
   scheduleT:"الجدول حسب اليوم", stageL:"المرحلة",
   stageIncub:"التحضين", stageLate:"أواخر التحضين", stageLock:"الإغلاق / الفقّاسة",
   scheduleNote:"هذه الخطة الابتدائية، تُضبط مرة واحدة. تنخفض الحرارة قليلًا في أواخر التحضين فقط إذا كانت حاضنتك ترتفع حرارتها مع تزايد حرارة الجنين الذاتية — تجاوز هذا إن كانت الحرارة مستقرة أصلًا. الرطوبة المعروضة نقطة بداية فقط: التقييم أعلاه (ومع كل وزن جديد) يخبرك متى وإلى أي مدى تُحرّكها فعليًا من هنا.",
+  nowBadge:"الآن", planOnly:"خطة", seeAbove:"انظر التقييم أعلاه",
   pipLock:"النقر/الإغلاق ≈ اليوم {d} ({date}) — ارفع الرطوبة إلى 65–70٪.",
   hatch:"الفقس المتوقع ≈ اليوم {d} ({date})", toGo:"باقٍ {n} يوم.", overdue:"حان/تأخّر.",
   candle:"افحص بالضوء حوالي اليوم {a} واليوم {b} لمراقبة الغرفة الهوائية.",
@@ -808,11 +810,27 @@ function chartHTML(e){
 function scheduleHTML(e,a){
   const lateStart=Math.max(1,Math.min(a.p-1,Math.round(e.days*0.66))), pip=a.p, days=e.days, rh=e.targetRH||45;
   const baseTemp=(e.temp||37.5), lateTemp=(baseTemp-0.25).toFixed(1);
+  const elapsed=a.elapsed;
+  const stageIdx = elapsed<lateStart?0 : (elapsed<pip?1:2);
+
+  function rhCell(stageIdx_i, planRH){
+    if(stageIdx_i!==stageIdx) return `<span style="color:var(--muted)">${planRH}</span>`;
+    if(a.status==="wait"||a.status==null) return `${planRH}% <span style="font-size:10.5px;color:var(--muted)">(${t("planOnly")})</span>`;
+    if(a.status==="ok") return `<span style="color:var(--ok)">${planRH}% ✓</span>`;
+    if(a.suggestedRH){
+      const live=Math.round(a.suggestedRH.clamped), up=live>planRH, col=a.status==="fast"?"var(--fast)":"var(--slow)";
+      return `<span style="color:${col}">${planRH}% → <b>${live}%</b> ${up?"▲":"▼"}</span>`;
+    }
+    const col=a.status==="fast"?"var(--fast)":"var(--slow)";
+    return `<span style="color:${col}">${planRH}% — ${t("seeAbove")}</span>`;
+  }
+  function nowTag(i){ return i===stageIdx?` <span style="font-size:10px;color:var(--heat);font-weight:700">● ${t("nowBadge")}</span>`:""; }
+
   const rows=[
-    [t("stageIncub"), `${t("day")} 0–${lateStart-1}`, baseTemp.toFixed(1)+"°C", rh+"%"],
-    [t("stageLate"), `${t("day")} ${lateStart}–${pip-1}`, lateTemp+"°C*", rh+"%"],
-    [t("stageLock"), `${t("day")} ${pip}–${days}`, a.hatcherTemp.toFixed(1)+"°C", "65–70%"]
-  ].map(r=>`<tr><td class="l">${r[0]}<div style="font-size:11px;color:var(--muted)">${r[1]}</div></td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("");
+    [t("stageIncub")+nowTag(0), `${t("day")} 0–${lateStart-1}`, baseTemp.toFixed(1)+"°C", rhCell(0,rh)],
+    [t("stageLate")+nowTag(1), `${t("day")} ${lateStart}–${pip-1}`, lateTemp+"°C*", rhCell(1,rh)],
+    [t("stageLock")+nowTag(2), `${t("day")} ${pip}–${days}`, a.hatcherTemp.toFixed(1)+"°C", "65–70%"]
+  ].map((r,i)=>`<tr${i===stageIdx?' style="background:rgba(123,191,106,.08)"':""}><td class="l">${r[0]}<div style="font-size:11px;color:var(--muted)">${r[1]}</div></td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("");
   return `<div class="sectionlabel">${t("scheduleT")}</div>
     <table><thead><tr><th class="l">${t("stageL")}</th><th>${t("targetTemp")}</th><th>${t("rh")}</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="hint" style="margin-top:8px">${t("scheduleNote")}</p>`;
