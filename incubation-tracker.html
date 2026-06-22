@@ -296,6 +296,12 @@
       <div><label id="l_temp"></label><input id="f_temp" type="number" step="0.1" inputmode="decimal" placeholder="37.5"></div>
     </div>
     <label id="l_targetRH"></label><input id="f_targetRH" type="number" step="1" inputmode="numeric" placeholder="45">
+    <label id="l_hatcherMode"></label>
+    <div class="seg" id="hatcherSeg">
+      <button data-v="separate" onclick="setHatcherMode('separate')"></button>
+      <button data-v="same" onclick="setHatcherMode('same')"></button>
+    </div>
+    <p class="hint" id="hatcherHint" style="margin-top:8px"></p>
     <label id="l_incubator"></label>
     <select id="f_incubator"></select>
     <label id="l_sched"></label>
@@ -376,12 +382,14 @@ const T={
   severeSlowTemp:" <b>Gap is large.</b> Mainstream guidance [2][8] keeps temperature fixed and corrects weight loss with humidity alone — push RH as far down (or vent) as your incubator allows first. Only if RH is already at minimum and the trend still won't close, a few (less-validated, parrot-specific) sources suggest a cautious <b>−0.1–0.2°C</b> nudge [7]. Recheck in 2 days.",
   overTarget:" ⚠️ Already past the {t}% total target — you can't undo lost water. Maximise humidity now (e.g. egg in a vented bag with damp sterile gauze, aired daily) to stop further loss.",
   waitMsg:"Record the fresh weight on setting day, then weigh on schedule. The ideal egg should weigh <b>{w}g</b> today ({l}% lost).",
-  lockMsg:"Past pip day {p}. Stop turning and <b>raise humidity to 65–70%</b>. Weight now jumps as the chick breathes — that's normal, stop tracking loss.",
+  lockMsg:"Past pip day {p}. Stop turning, move to the hatcher, and <b>raise humidity to ≈{rh}%</b> (65–70% range, based on how close you landed to target loss). Weight now jumps as the chick breathes — that's normal, stop tracking loss.",
+  lockMsgSame:"Past pip day {p}. Staying in the same incubator: stop turning, lay eggs flat on the floor/hatching tray, and <b>raise humidity to ≈{rh}%</b> (65–70% range, based on how close you landed to target loss). No separate hatcher needed — best practice is to leave the temperature setting as-is rather than drop it. Weight now jumps as the chick breathes — that's normal, stop tracking loss.",
   tHold:"<b>Temperature:</b> hold ≈ {t}°C. Reading {m}°C is on target.",
   tWarm:"<b>Temperature {m}°C is warm</b> (+{d}°C). Risks early hatch & extra water loss — nudge air temp down ~0.2°C.",
   tCool:"<b>Temperature {m}°C is cool</b> (−{d}°C). Hatch may lag — nudge air temp up ~0.2°C.",
   tLate:"<b>Last third:</b> the embryo now makes its own heat. If the egg runs warm, drop air temp ~0.2–0.3°C to keep shell ≈ {t}°C.",
   tLock:"<b>Hatcher:</b> set ≈ {h}°C (about 0.4°C below incubation) and RH 65–70%.",
+  tLockSame:"<b>Staying in the incubator:</b> keep temp ≈ {h}°C — same as incubation, don't drop it since there's no separate hatcher stage. Raise RH to 65–70% and stop turning.",
   status:"status", verdictDay:"day {d}",
   // egg modal
   eggNew:"New egg", eggEdit:"Edit egg",
@@ -389,6 +397,10 @@ const T={
   nameL:"Label / ID", speciesL:"Species", freshL:"Fresh weight (g)", dateL:"Set date (day 0)",
   daysL:"Incub. days", targetL:"Target loss %", pipL:"Pip day (loss target by)", tempL:"Set temp °C",
   targetRhL:"Target RH % (starting point)",
+  hatcherModeL:"At lockdown / hatching", hatcherSep:"Moves to a hatcher", hatcherSame:"Stays in this incubator",
+  hatcherSepHint:"Standard two-stage setup: at lockdown the egg moves to a dedicated hatcher, which usually runs ≈0.4°C cooler with RH raised to 65–70%.",
+  hatcherSameHint:"Single-stage setup, no separate hatcher: best practice is to leave temperature exactly as set during incubation (don't drop it), lay the egg flat, stop turning, and raise RH to 65–70%.",
+  noHatcherNote:"No separate hatcher: temperature is left unchanged from the incubation setting rather than dropped — only humidity and turning change at lockdown.",
   schedL:"Weigh-in schedule", schDaily:"Daily", schEvery:"Every N days", schSpecific:"Specific days",
   everyLabel:"Every how many days", specificLabel:"Days (comma separated, e.g. 0,4,8,12)",
   saveEgg:"Save egg", delEgg:"Delete this egg", confirmDel:"Delete this egg and all its weigh-ins?",
@@ -454,18 +466,24 @@ const T={
   severeSlowTemp:" <b>الفارق كبير.</b> الإرشاد السائد [2][8] يُثبّت الحرارة ويصحّح فقد الوزن بالرطوبة وحدها — اخفض الرطوبة لأقصى ما تسمح به حاضنتك (أو هوّ) أولًا. فقط إن كانت الرطوبة في أدناها والاتجاه لا يزال لا يتقارب، تذكر بعض المصادر (الأقل توثيقًا، الخاصة بالببغاوات) ضبطًا حذرًا بمقدار <b>−0.1–0.2°م</b> [7]. أعد الفحص خلال يومين.",
   overTarget:" ⚠️ تجاوزت هدف الفقد الكلي {t}٪ — لا يمكن إعادة الماء المفقود. ارفع الرطوبة لأقصاها الآن (مثل وضع البيضة في كيس مثقوب مع شاش معقّم مبلّل، يُهوّى يوميًا) لإيقاف المزيد من الفقد.",
   waitMsg:"سجّل الوزن الطازج يوم الوضع، ثم زِن حسب الجدول. يُفترض أن تزن البيضة المثالية <b>{w}غ</b> اليوم (فُقد {l}٪).",
-  lockMsg:"تجاوزت يوم النقر {p}. أوقف التقليب و<b>ارفع الرطوبة إلى 65–70٪</b>. يقفز الوزن الآن مع تنفّس الفرخ — هذا طبيعي، أوقف تتبّع الفقد.",
+  lockMsg:"تجاوزت يوم النقر {p}. أوقف التقليب، انقل البيضة إلى الفقّاسة، و<b>ارفع الرطوبة إلى ≈{rh}٪</b> (ضمن نطاق 65–70٪ حسب قربك من هدف الفقد). يقفز الوزن الآن مع تنفّس الفرخ — هذا طبيعي، أوقف تتبّع الفقد.",
+  lockMsgSame:"تجاوزت يوم النقر {p}. ستبقى في نفس الحاضنة: أوقف التقليب، ضع البيضة مسطّحة، و<b>ارفع الرطوبة إلى ≈{rh}٪</b> (ضمن نطاق 65–70٪ حسب قربك من هدف الفقد). لا حاجة لفقّاسة منفصلة — الأفضل ترك الحرارة كما هي دون خفضها. يقفز الوزن الآن مع تنفّس الفرخ — هذا طبيعي، أوقف تتبّع الفقد.",
   tHold:"<b>الحرارة:</b> ثبّت ≈ {t}°م. القراءة {m}°م على الهدف.",
   tWarm:"<b>الحرارة {m}°م مرتفعة</b> (+{d}°م). تهدّد بفقس مبكر وفقد ماء زائد — اخفض حرارة الهواء ~0.2°م.",
   tCool:"<b>الحرارة {m}°م منخفضة</b> (−{d}°م). قد يتأخر الفقس — ارفع حرارة الهواء ~0.2°م.",
   tLate:"<b>الثلث الأخير:</b> يولّد الجنين حرارته الآن. إن ارتفعت حرارة البيضة، اخفض حرارة الهواء ~0.2–0.3°م لإبقاء القشرة ≈ {t}°م.",
   tLock:"<b>الفقّاسة:</b> اضبط ≈ {h}°م (أقل بنحو 0.4°م من التحضين) ورطوبة 65–70٪.",
+  tLockSame:"<b>البقاء في الحاضنة:</b> حافظ على الحرارة ≈ {h}°م — نفس حرارة التحضين، لا تخفضها لعدم وجود مرحلة فقّاسة منفصلة. ارفع الرطوبة إلى 65–70٪ وأوقف التقليب.",
   status:"الحالة", verdictDay:"اليوم {d}",
   eggNew:"بيضة جديدة", eggEdit:"تعديل البيضة",
   eggHint:"اختر النوع لملء أيام التحضين ونسبة الفقد تلقائيًا — يمكنك تعديل أي قيمة.",
   nameL:"الاسم / المعرّف", speciesL:"النوع", freshL:"الوزن الطازج (غ)", dateL:"تاريخ الوضع (اليوم 0)",
   daysL:"أيام التحضين", targetL:"نسبة الفقد ٪", pipL:"يوم النقر (هدف الفقد عنده)", tempL:"الحرارة °م",
   targetRhL:"الرطوبة المستهدفة ٪ (نقطة بداية)",
+  hatcherModeL:"عند الإغلاق / الفقس", hatcherSep:"تنتقل لفقّاسة", hatcherSame:"تبقى في هذه الحاضنة",
+  hatcherSepHint:"الإعداد المعتاد بمرحلتين: عند الإغلاق تنتقل البيضة لفقّاسة مخصّصة، تعمل عادة أبرد بنحو 0.4°م مع رفع الرطوبة إلى 65–70٪.",
+  hatcherSameHint:"إعداد بمرحلة واحدة، بدون فقّاسة منفصلة: الأفضل ترك الحرارة كما هي أثناء التحضين (لا تخفضها)، ووضع البيضة مسطّحة، وإيقاف التقليب، ورفع الرطوبة إلى 65–70٪.",
+  noHatcherNote:"بدون فقّاسة منفصلة: تبقى الحرارة كما هي من إعداد التحضين دون خفضها — فقط الرطوبة والتقليب يتغيّران عند الإغلاق.",
   schedL:"جدول الوزن", schDaily:"يوميًا", schEvery:"كل N يوم", schSpecific:"أيام محددة",
   everyLabel:"كل كم يوم", specificLabel:"الأيام (مفصولة بفاصلة، مثل 0,4,8,12)",
   saveEgg:"حفظ البيضة", delEgg:"حذف هذه البيضة", confirmDel:"حذف هذه البيضة وكل أوزانها؟",
@@ -535,7 +553,7 @@ const RH_MID={tiny:51,small:49,med:49,"med-rf":54,large:41,"large-rf":44,ref:47}
 
 /* ============ storage ============ */
 const KEY="drydown.eggs.v1";
-let eggs=load(), currentId=null, editId=null, measEggId=null, measEditId=null, schedDraft={mode:"everyN",n:3,days:[0,4,8,12]};
+let eggs=load(), currentId=null, editId=null, measEggId=null, measEditId=null, schedDraft={mode:"everyN",n:3,days:[0,4,8,12]}, hatcherDraft="separate";
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY))||[] }catch(e){ return [] } }
 function save(){ localStorage.setItem(KEY, JSON.stringify(eggs)); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
@@ -622,7 +640,7 @@ function analyse(e){
     targetWeightToday:targetWeightAt(e,Math.min(elapsed,p)),
     targetLossToday:targetLossAt(e,Math.min(elapsed,p)),
     dailyG:e.fresh*(e.target/100)/p, status:"wait",
-    hatcherTemp:Math.max(36.6,(e.temp||37.5)-0.4)};
+    hatcherTemp:e.noHatcher?(e.temp||37.5):Math.max(36.6,(e.temp||37.5)-0.4), lockRH:67};
   const nd=nextWeighDay(e);
   out.nextDay=nd; out.nextDate=nd==null?null:addDays(e.setDate,nd);
   out.due = nd!=null && nd<=elapsed && elapsed<=p;
@@ -634,6 +652,7 @@ function analyse(e){
     out.lastRH=null; out.lastTemp=null;
     for(let i=ms.length-1;i>=0;i--){ if(out.lastRH==null&&ms[i].rh!=null&&ms[i].rh!=="") out.lastRH=ms[i].rh; if(out.lastTemp==null&&ms[i].temp!=null&&ms[i].temp!=="") out.lastTemp=ms[i].temp; }
     const tol=Math.max(1.0,0.12*Math.max(tLoss,1)); out.tol=tol;
+    out.lockRH = aLoss>=e.target ? 70 : (aLoss<e.target-2 ? 65 : 67);
     if(lt>=p) out.status="lockdown";
     else if(dev>tol) out.status="fast";
     else if(dev<-tol) out.status="slow";
@@ -663,7 +682,9 @@ function paintChrome(){
   // egg modal labels
   set("l_name","nameL"); set("l_species","speciesL"); set("l_fresh","freshL"); set("l_date","dateL");
   set("l_days","daysL"); set("l_target","targetL"); set("l_pip","pipL"); set("l_temp","tempL");
-  set("l_targetRH","targetRhL");
+  set("l_targetRH","targetRhL"); set("l_hatcherMode","hatcherModeL");
+  const hsegs=document.querySelectorAll("#hatcherSeg button");
+  hsegs[0].textContent=t("hatcherSep"); hsegs[1].textContent=t("hatcherSame");
   set("l_sched","schedL"); set("t_eggHint","eggHint"); set("t_saveEgg","saveEgg");
   document.getElementById("eggDelBtn").textContent=t("delEgg");
   const segs=document.querySelectorAll("#schedSeg button");
@@ -748,7 +769,7 @@ function incLineHTML(e,a){
 function tempBlock(e,a){
   const tg=e.temp||37.5;
   let parts=[];
-  if(a.status==="lockdown"||a.elapsed>=a.p){ parts.push(t("tLock",{h:a.hatcherTemp.toFixed(1)})); }
+  if(a.status==="lockdown"||a.elapsed>=a.p){ parts.push(e.noHatcher?t("tLockSame",{h:a.hatcherTemp.toFixed(1)}):t("tLock",{h:a.hatcherTemp.toFixed(1)})); }
   else {
     if(a.lastTemp!=null){
       const d=a.lastTemp-tg;
@@ -766,8 +787,9 @@ function verdictHTML(e,a){
       <div class="act">${t("waitMsg",{w:a.targetWeightToday.toFixed(2),l:a.targetLossToday.toFixed(1)})}</div>${tempBlock(e,a)}</div>`;
   }
   if(a.status==="lockdown"){
+    const msg=e.noHatcher?t("lockMsgSame",{p:a.p,rh:a.lockRH}):t("lockMsg",{p:a.p,rh:a.lockRH});
     return `<div class="verdict v-wait"><div class="big"><span class="dot"></span>${t("st_lock")}</div>
-      <div class="act">${t("lockMsg",{p:a.p})}</div>${tempBlock(e,a)}</div>`;
+      <div class="act">${msg}</div>${tempBlock(e,a)}</div>`;
   }
   const cls="v-"+STC[a.status]; let action;
   const off=Math.abs(a.dev).toFixed(1);
@@ -826,14 +848,17 @@ function scheduleHTML(e,a){
   }
   function nowTag(i){ return i===stageIdx?` <span style="font-size:10px;color:var(--heat);font-weight:700">● ${t("nowBadge")}</span>`:""; }
 
+  const lockTemp=a.hatcherTemp.toFixed(1)+"°C"+(e.noHatcher?"†":"*");
+  const lockRH=`${a.lockRH}% <span style="font-size:10.5px;color:var(--muted)">(65–70%)</span>`;
   const rows=[
     [t("stageIncub")+nowTag(0), `${t("day")} 0–${lateStart-1}`, baseTemp.toFixed(1)+"°C", rhCell(0,rh)],
     [t("stageLate")+nowTag(1), `${t("day")} ${lateStart}–${pip-1}`, lateTemp+"°C*", rhCell(1,rh)],
-    [t("stageLock")+nowTag(2), `${t("day")} ${pip}–${days}`, a.hatcherTemp.toFixed(1)+"°C", "65–70%"]
+    [t("stageLock")+nowTag(2), `${t("day")} ${pip}–${days}`, lockTemp, lockRH]
   ].map((r,i)=>`<tr${i===stageIdx?' style="background:rgba(123,191,106,.08)"':""}><td class="l">${r[0]}<div style="font-size:11px;color:var(--muted)">${r[1]}</div></td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("");
   return `<div class="sectionlabel">${t("scheduleT")}</div>
     <table><thead><tr><th class="l">${t("stageL")}</th><th>${t("targetTemp")}</th><th>${t("rh")}</th></tr></thead><tbody>${rows}</tbody></table>
-    <p class="hint" style="margin-top:8px">${t("scheduleNote")}</p>`;
+    <p class="hint" style="margin-top:8px">${t("scheduleNote")}</p>
+    ${e.noHatcher?`<p class="hint" style="margin-top:6px">†${t("noHatcherNote")}</p>`:""}`;
 }
 function timelineHTML(e,a){
   const c1=Math.max(5,Math.round(e.days*0.27)), c2=Math.round(e.days*0.55);
@@ -901,6 +926,11 @@ function rhHintShow(k){
   const hint=isRTL()?RH_HINT_AR[k]:RH_HINT_EN[k], note=isRTL()?RH_NOTE_AR:RH_NOTE_EN;
   document.getElementById("rhHint").innerHTML="💧 "+hint+"<br><span style='color:#6b5e49'>"+note+"</span>";
 }
+function setHatcherMode(v){
+  hatcherDraft=v;
+  document.querySelectorAll("#hatcherSeg button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+  document.getElementById("hatcherHint").innerHTML=v==="same"?t("hatcherSameHint"):t("hatcherSepHint");
+}
 function setSched(mode){
   schedDraft.mode=mode;
   document.querySelectorAll("#schedSeg button").forEach(b=>b.classList.toggle("on",b.dataset.m===mode));
@@ -932,6 +962,7 @@ function openEgg(id){
     schedDraft=Object.assign({mode:"everyN",n:3,days:[0,4,8,12]}, e.schedule||{});
     rhHintShow(SPECIES[si].k);
     document.getElementById("eggDelBtn").style.display="block";
+    setHatcherMode(e.noHatcher?"same":"separate");
   } else {
     document.getElementById("f_name").value="";
     document.getElementById("f_fresh").value="";
@@ -941,6 +972,7 @@ function openEgg(id){
     fillIncubatorSelect("");
     schedDraft={mode:"everyN",n:3,days:[0,4,8,12]};
     document.getElementById("eggDelBtn").style.display="none";
+    setHatcherMode("separate");
   }
   setSched(schedDraft.mode);
   document.getElementById("eggModal").classList.add("open");
@@ -964,6 +996,7 @@ function saveEgg(){
     pip:parseInt(document.getElementById("f_pip").value)||Math.max(1,days-3),
     temp:parseFloat(document.getElementById("f_temp").value)||37.5,
     targetRH:parseFloat(document.getElementById("f_targetRH").value)||45,
+    noHatcher:hatcherDraft==="same",
     incubatorId:document.getElementById("f_incubator").value||null,
     schedule:readSched()
   };
