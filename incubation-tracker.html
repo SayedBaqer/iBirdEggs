@@ -424,6 +424,8 @@ const T={
   idealTempL:"Ideal temp", idealRhL:"Ideal RH", matchL:"Match",
   avgMatch:"Overall match", avgMatchMsg:"Eggs here average <b>{p}%</b> match to their own ideal temp/RH. This is a settings-fit estimate, not a validated hatch-rate predictor — each egg's weigh-in trend is still the real signal.",
   noEggsAssigned:"Assign eggs to this incubator to see a match estimate.",
+  stageConflictT:"Stage conflict in this incubator", stageConflictEggMsg:"This egg needs 65–70% RH for hatching, but other eggs sharing this incubator are still drying at a lower setting — raising the whole incubator's humidity now would slow their loss.",
+  stageConflictMsg:"{n} egg(s) need 65–70% RH for hatching while {m} other egg(s) here are still in the drying phase at lower humidity — you can't raise the whole incubator's humidity without slowing the others' loss. Best practice: move the hatching egg to a separate hatching container/basket (a deli cup with damp paper towel under a humidity dome works), or boost humidity locally there, instead of changing the shared incubator setting.",
   turnsToday:"Turns today", logTurn:"Log a turn",
   // info
   infoTitle:"How it works & sources",
@@ -505,6 +507,8 @@ const T={
   idealTempL:"الحرارة المثالية", idealRhL:"الرطوبة المثالية", matchL:"التوافق",
   avgMatch:"التوافق العام", avgMatchMsg:"بيضات هذه الحاضنة تحقق توافقًا متوسطه <b>{p}٪</b> مع حرارتها/رطوبتها المثالية الفردية. هذا تقدير لمدى توافق الإعدادات، لا معدل فقس مُثبَت — يبقى اتجاه وزن كل بيضة هو المؤشر الحقيقي.",
   noEggsAssigned:"خصّص بيضات لهذه الحاضنة لرؤية تقدير التوافق.",
+  stageConflictT:"تعارض في مراحل هذه الحاضنة", stageConflictEggMsg:"هذه البيضة تحتاج رطوبة 65–70٪ للفقس، لكن بيضات أخرى تشارك هذه الحاضنة لا تزال في مرحلة التجفيف بإعداد رطوبة أقل — رفع رطوبة الحاضنة كلها الآن سيُبطئ فقدها.",
+  stageConflictMsg:"{n} بيضة/بيضات تحتاج رطوبة 65–70٪ للفقس بينما {m} بيضة/بيضات أخرى هنا لا تزال في مرحلة التجفيف برطوبة أقل — لا يمكنك رفع رطوبة الحاضنة كلها دون إبطاء فقدها. الأفضل: نقل البيضة المُقتربة من الفقس إلى وعاء/سلة فقس منفصلة (كوب بلاستيكي مع منديل ورقي مبلّل تحت قبة رطوبة يكفي)، أو رفع الرطوبة محليًا هناك فقط، بدل تغيير إعداد الحاضنة المشتركة.",
   turnsToday:"قلبات اليوم", logTurn:"سجّل تقليبًا",
   infoTitle:"كيف يعمل والمصادر",
  }
@@ -576,10 +580,22 @@ function turnLabel(tt){ return {auto360:t("ttAuto"),manual180:t("tt180"),manual4
    actual temp/RH sit to this egg's own calculated ideal. */
 function fitScore(e,a,inc){
   if(!inc) return null;
-  const idealT=e.temp||37.5, idealRH=a.suggestedRH?a.suggestedRH.clamped:(a.lastRH!=null?a.lastRH:e.targetRH);
+  const lock=a.status==="lockdown";
+  const idealT=lock?a.hatcherTemp:(e.temp||37.5);
+  const idealRH=lock?a.lockRH:(a.suggestedRH?a.suggestedRH.clamped:(a.lastRH!=null?a.lastRH:e.targetRH));
   let score=100-Math.abs(inc.temp-idealT)*25;
   if(idealRH!=null) score-=Math.abs(inc.rh-idealRH)*1.2;
   return Math.max(0,Math.min(100,Math.round(score)));
+}
+/* When eggs at very different stages share one incubator, the lockdown egg's
+   65-70% RH need conflicts with the others' lower drying-stage RH — flag it. */
+function stageConflict(assigned){
+  if(assigned.length<2) return null;
+  const analysed=assigned.map(e=>({e,a:analyse(e)}));
+  const lockEggs=analysed.filter(x=>x.a.status==="lockdown");
+  if(!lockEggs.length) return null;
+  const others=analysed.filter(x=>x.a.status!=="lockdown");
+  return others.length ? {lockEggs,others} : null;
 }
 
 /* ============ dates ============ */
@@ -764,7 +780,13 @@ function incLineHTML(e,a){
   if(!e.incubatorId) return "";
   const inc=incubators.find(i=>i.id===e.incubatorId); if(!inc) return "";
   const fs=fitScore(e,a,inc);
-  return `<div class="timeline" style="margin-top:10px">📦 <b>${esc(inc.name)}</b> — ${inc.temp.toFixed(1)}°C / ${inc.rh}% RH${fs!=null?` · ${t("matchL")}: <b>${fs}%</b>`:""}</div>`;
+  let conflictNote="";
+  if(a.status==="lockdown"){
+    const assigned=eggs.filter(x=>x.incubatorId===inc.id);
+    const stillDrying=assigned.some(x=>x.id!==e.id&&analyse(x).status!=="lockdown");
+    if(stillDrying) conflictNote=`<div style="margin-top:6px;color:var(--fast);font-size:12.5px">⚠️ ${t("stageConflictEggMsg")}</div>`;
+  }
+  return `<div class="timeline" style="margin-top:10px">📦 <b>${esc(inc.name)}</b> — ${inc.temp.toFixed(1)}°C / ${inc.rh}% RH${fs!=null?` · ${t("matchL")}: <b>${fs}%</b>`:""}${conflictNote}</div>`;
 }
 function tempBlock(e,a){
   const tg=e.temp||37.5;
@@ -1054,6 +1076,9 @@ function renderIncDetail(id){
       <td><span class="dev ${fs==null?"":(fs>=80?"on":fs>=60?"down":"up")}">${fs==null?"—":fs+"%"}</span></td></tr>`;
   }).join("");
   const tableBlock=assigned.length?`<table><thead><tr><th class="l">${t("eggsWord")}</th><th>${t("idealTempL")}</th><th>${t("idealRhL")}</th><th>${t("matchL")}</th></tr></thead><tbody>${rows}</tbody></table>`:`<div class="empty"><b>${t("incNoEggs")}</b></div>`;
+  const conflict=stageConflict(assigned);
+  const conflictBlock=conflict?`<div class="verdict v-fast" style="margin-top:10px"><div class="big"><span class="dot"></span>${t("stageConflictT")}</div>
+     <div class="act">${t("stageConflictMsg",{n:conflict.lockEggs.length,m:conflict.others.length})}</div></div>`:"";
   let turnBlock;
   if(inc.turnType!=="auto360"){
     const td=today(), cnt=(inc.turns&&inc.turns.date===td)?inc.turns.count:0;
@@ -1063,7 +1088,7 @@ function renderIncDetail(id){
   document.getElementById("incDetailBody").innerHTML=
     `<div class="verdict v-ok"><div class="big"><span class="dot"></span>${t("avgMatch")}</div>
      <div class="act">${avg==null?t("noEggsAssigned"):t("avgMatchMsg",{p:avg})}</div></div>
-     ${turnBlock}<div class="sectionlabel">${t("eggsWord")}</div>${tableBlock}`;
+     ${conflictBlock}${turnBlock}<div class="sectionlabel">${t("eggsWord")}</div>${tableBlock}`;
 }
 function logTurn(id){
   const inc=incubators.find(x=>x.id===id); if(!inc) return;
