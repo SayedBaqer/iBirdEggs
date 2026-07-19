@@ -15,43 +15,43 @@
 (function(){
   /* ── shared drawing helper ─────────────────────────── */
   function drawIcon(ctx, S){
-    var cx=S/2;
-    // solid black background
+    var cx=S/2, lw=Math.max(2, S*0.046);
+    // black background
     ctx.fillStyle='#16110c';
     ctx.fillRect(0,0,S,S);
-    ctx.fillStyle='#f0a02a';
-    // head
+    // gold stroke only — no fills
+    ctx.strokeStyle='#f0a02a';
+    ctx.lineWidth=lw;
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    // head circle
     ctx.beginPath();
-    ctx.arc(cx, S*0.30, S*0.10, 0, Math.PI*2);
-    ctx.fill();
-    // left wing: sweeps up-left from body junction to tip, returns along underside
+    ctx.arc(cx, S*0.34, S*0.09, 0, Math.PI*2);
+    ctx.stroke();
+    // left wing: single arc sweeping high-left from body centre to tip
     ctx.beginPath();
     ctx.moveTo(cx, S*0.50);
-    ctx.quadraticCurveTo(S*0.22, S*0.22, S*0.07, S*0.44);
-    ctx.quadraticCurveTo(S*0.28, S*0.50, cx, S*0.50);
-    ctx.closePath();ctx.fill();
+    ctx.quadraticCurveTo(S*0.20, S*0.14, S*0.04, S*0.49);
+    ctx.stroke();
     // right wing (mirror)
     ctx.beginPath();
     ctx.moveTo(cx, S*0.50);
-    ctx.quadraticCurveTo(S*0.78, S*0.22, S*0.93, S*0.44);
-    ctx.quadraticCurveTo(S*0.72, S*0.50, cx, S*0.50);
-    ctx.closePath();ctx.fill();
-    // body — narrow teardrop connecting head to tail
+    ctx.quadraticCurveTo(S*0.80, S*0.14, S*0.96, S*0.49);
+    ctx.stroke();
+    // body oval
     ctx.beginPath();
-    ctx.ellipse(cx, S*0.55, S*0.055, S*0.12, 0, 0, Math.PI*2);
-    ctx.fill();
-    // tail — small forked triangle
+    ctx.ellipse(cx, S*0.59, S*0.052, S*0.105, 0, 0, Math.PI*2);
+    ctx.stroke();
+    // short neck line bridging head-bottom to body-top
     ctx.beginPath();
-    ctx.moveTo(cx-S*0.07, S*0.65);
-    ctx.lineTo(cx, S*0.75);
-    ctx.lineTo(cx+S*0.07, S*0.65);
-    ctx.closePath();ctx.fill();
+    ctx.moveTo(cx, S*0.43);
+    ctx.lineTo(cx, S*0.485);
+    ctx.stroke();
   }
 
-  /* ── SVG favicon ───────────────────────────────────── */
-  var fc=document.createElement('canvas');fc.width=fc.height=64;
-  drawIcon(fc.getContext('2d'),64);
-  var fi=document.createElement('link');fi.rel='icon';fi.type='image/png';fi.href=fc.toDataURL();
+  /* ── SVG favicon (resolution-independent) ─────────── */
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#16110c"/><g stroke="#f0a02a" stroke-width="4.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="34" r="9"/><line x1="50" y1="43" x2="50" y2="48.5"/><path d="M50 50 Q20 14 4 49"/><path d="M50 50 Q80 14 96 49"/><ellipse cx="50" cy="59" rx="5.2" ry="10.5"/></g></svg>';
+  var fi=document.createElement('link');fi.rel='icon';fi.type='image/svg+xml';fi.href='data:image/svg+xml;base64,'+btoa(svg);
   document.head.appendChild(fi);
 
   /* ── Apple touch icon (180×180 PNG) ────────────────── */
