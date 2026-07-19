@@ -221,10 +221,6 @@ function applyUpdate(){
       </div>
     </div>
     <p class="sub" id="t_sub"></p>
-    <div id="updateBar" style="display:none;background:var(--heat);color:#1a0e00;padding:9px 16px;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:600;border-radius:12px;margin:6px 0 2px;">
-      <span id="t_updateMsg"></span>
-      <button onclick="applyUpdate()" id="t_updateBtn" style="background:#1a0e00;color:var(--heat);border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;flex:none;"></button>
-    </div>
   </header>
 
   <div class="summary">
@@ -1456,6 +1452,14 @@ paintChrome(); renderList();
 </script>
 <div style="position:fixed;bottom:0;left:0;right:0;z-index:40;background:var(--bg);border-top:1px solid var(--line);padding:8px 16px calc(8px + env(safe-area-inset-bottom));text-align:center;font-size:11px;color:var(--muted);">
   © iBird Hatching Machine &nbsp;·&nbsp; <a href="https://www.instagram.com/ibirds" target="_blank" rel="noopener" style="color:var(--heat);text-decoration:none">@ibirds</a>
+</div>
+
+<div id="updateBar" style="display:none;position:fixed;inset:0;z-index:700;align-items:center;justify-content:center;background:rgba(0,0,0,.55);">
+  <div style="background:var(--heat);color:#1a0e00;padding:22px 24px;border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,.45);max-width:280px;width:calc(100% - 48px);text-align:center;">
+    <div style="font-size:22px;margin-bottom:8px">🔄</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px" id="t_updateMsg"></div>
+    <button onclick="applyUpdate()" id="t_updateBtn" style="background:#1a0e00;color:var(--heat);border:none;border-radius:12px;padding:11px 0;font-size:14px;font-weight:700;cursor:pointer;width:100%"></button>
+  </div>
 </div>
 </body>
 </html>
