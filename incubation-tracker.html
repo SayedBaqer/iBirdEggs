@@ -45,7 +45,7 @@ function applyUpdate(){
   var ai=document.createElement('link');ai.rel='apple-touch-icon';ai.href=LOGO;document.head.appendChild(ai);
   document.addEventListener('DOMContentLoaded',function(){
     var el=document.getElementById('appLogo');if(el)el.src=LOGO;
-    if(!localStorage.getItem('drydown.toured')){setTimeout(()=>openTour(true),900);}
+    if(!localStorage.getItem('drydown.toured')){setTimeout(openTour,900);}
   });
 })();
 </script>
@@ -1471,8 +1471,8 @@ const TOUR_STEPS={
   ]
 };
 let tourIdx=0;
-function openTour(firstTime){
-  tourIdx=firstTime?-1:0;
+function openTour(){
+  tourIdx=-1;
   renderTourStep();
   document.getElementById("tourOverlay").style.display="flex";
   document.body.style.overflow="hidden";
