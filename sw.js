@@ -1,9 +1,13 @@
 // iBird Eggs — Service Worker
 // Network-first for navigation: always fetches latest HTML when online,
 // falls back to cache when offline.
-const CACHE = 'ibird-v2';
+const CACHE = 'ibird-v3';
 
-self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('install', () => {
+  // Do NOT skipWaiting here — wait for page to post SKIP_WAITING after user
+  // taps Refresh on the update banner. Calling it here bypasses the waiting
+  // state, so the banner detection never fires.
+});
 
 self.addEventListener('activate', e => {
   e.waitUntil(
