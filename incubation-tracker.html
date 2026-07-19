@@ -96,7 +96,7 @@ function applyUpdate(){
   .egg .metaline{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;}
   .egg .metaline .m{font-size:11px;color:#7c6c52;}
   .egg .metaline .m b{display:block;font-family:var(--mono);font-size:15px;color:var(--shell-ink);font-weight:600;margin-top:1px;}
-  .egg .due{margin-top:11px;font-size:11px;font-weight:700;color:#b0431f;display:flex;align-items:center;gap:5px;}
+  .egg .due{font-size:11px;font-weight:700;color:#b0431f;display:flex;align-items:center;gap:5px;justify-content:flex-end;text-align:end;}
   .egg .due.future{color:#8a7a5f;font-weight:600;}
   .egg .prog{height:5px;border-radius:3px;background:rgba(42,33,24,.12);margin-top:11px;overflow:hidden;}
   .egg .prog i{display:block;height:100%;background:var(--heat-d);border-radius:3px;}
@@ -802,19 +802,25 @@ function renderList(){
       }
       const incName=e.incubatorId&&incubators.find(i=>i.id===e.incubatorId);
       return `<div class="egg" onclick="openDetail('${e.id}')">
-        <div class="top"><div><div class="name">${esc(e.name||"—")}</div><div class="sp">${esc(spName(e.species))} · ${e.days}${isRTL()?"ي":"d"}${incName?" · 📦 "+esc(incName.name):""}</div></div>
-          <div style="display:flex;align-items:center;gap:6px;flex:none">
-            <div class="pill ${cls}">${stLabel(a.status)}</div>
-            <button class="delrow" onclick="event.stopPropagation();openEgg('${e.id}')" title="${t('editTip')}" style="color:var(--water)">✎</button>
-            <button class="delrow" onclick="event.stopPropagation();cloneEgg('${e.id}')" title="${t('cloneTip')}" style="color:var(--heat)">⊕</button>
-            <button class="delrow" onclick="event.stopPropagation();quickDeleteEgg('${e.id}')" title="Delete">✕</button>
-          </div></div>
+        <div class="top">
+          <div><div class="name">${esc(e.name||"—")}</div><div class="sp">${esc(spName(e.species))} · ${e.days}${isRTL()?"ي":"d"}</div></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none">
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="pill ${cls}">${stLabel(a.status)}</div>
+              <button class="delrow" onclick="event.stopPropagation();openEgg('${e.id}')" title="${t('editTip')}" style="color:var(--water)">✎</button>
+              <button class="delrow" onclick="event.stopPropagation();cloneEgg('${e.id}')" title="${t('cloneTip')}" style="color:var(--heat)">⊕</button>
+              <button class="delrow" onclick="event.stopPropagation();quickDeleteEgg('${e.id}')" title="Delete">✕</button>
+            </div>
+            ${dueLine}
+            ${incName?`<div style="font-size:11px;color:var(--muted);text-align:end">📦 ${esc(incName.name)}</div>`:""}
+          </div>
+        </div>
         <div class="metaline">
           <div class="m">${t("day")}<b>${a.elapsed<0?0:a.elapsed} / ${e.days}</b></div>
           <div class="m">${t("weight")}<b>${curW}</b></div>
           <div class="m">${t("lost")}<b>${curL}</b></div>
           <div class="m">${t("targetNow")}<b>${a.targetLossToday.toFixed(1)}%</b></div>
-        </div>${dueLine}
+        </div>
         <div class="prog"><i style="width:${pct}%"></i></div></div>`;
     }).join("");
   }
