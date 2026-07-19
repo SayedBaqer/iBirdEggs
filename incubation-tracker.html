@@ -6,49 +6,46 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="iBird Eggs">
+<meta name="apple-mobile-web-app-title" content="Eggs Tracking">
 <meta name="theme-color" content="#16110c">
-<title>iBird Eggs · Incubation Tracker</title>
+<title>Eggs Tracking</title>
 <script>
 /* Generate app icons at runtime so everything stays in one file.
    SVG favicon for browsers; canvas-PNG apple-touch-icon for iOS. */
 (function(){
   /* ── shared drawing helper ─────────────────────────── */
   function drawIcon(ctx, S){
-    var cx=S/2, G='#f0a02a', BG='#16110c', r=S*0.2;
-    // rounded-rect background
-    ctx.fillStyle=BG;
+    var cx=S/2;
+    // solid black background
+    ctx.fillStyle='#16110c';
+    ctx.fillRect(0,0,S,S);
+    ctx.fillStyle='#f0a02a';
+    // head
     ctx.beginPath();
-    ctx.moveTo(r,0);ctx.lineTo(S-r,0);ctx.arcTo(S,0,S,r,r);
-    ctx.lineTo(S,S-r);ctx.arcTo(S,S,S-r,S,r);
-    ctx.lineTo(r,S);ctx.arcTo(0,S,0,S-r,r);
-    ctx.lineTo(0,r);ctx.arcTo(0,0,r,0,r);
-    ctx.closePath();ctx.fill();
-    ctx.fillStyle=G; ctx.strokeStyle=G;
-    var wy=S*0.42, wh=S*0.16;
-    // left wing
+    ctx.arc(cx, S*0.30, S*0.10, 0, Math.PI*2);
+    ctx.fill();
+    // left wing: sweeps up-left from body junction to tip, returns along underside
     ctx.beginPath();
-    ctx.moveTo(cx,wy);
-    ctx.quadraticCurveTo(cx*0.7,wy-wh, S*0.12, wy+wh*0.5);
-    ctx.quadraticCurveTo(cx*0.6, wy-wh*0.1, cx, wy);
+    ctx.moveTo(cx, S*0.50);
+    ctx.quadraticCurveTo(S*0.22, S*0.22, S*0.07, S*0.44);
+    ctx.quadraticCurveTo(S*0.28, S*0.50, cx, S*0.50);
     ctx.closePath();ctx.fill();
     // right wing (mirror)
     ctx.beginPath();
-    ctx.moveTo(cx,wy);
-    ctx.quadraticCurveTo(cx+cx*0.3+cx*0.7*0.3, wy-wh, S*0.88, wy+wh*0.5);
-    ctx.quadraticCurveTo(cx+cx*0.4, wy-wh*0.1, cx, wy);
+    ctx.moveTo(cx, S*0.50);
+    ctx.quadraticCurveTo(S*0.78, S*0.22, S*0.93, S*0.44);
+    ctx.quadraticCurveTo(S*0.72, S*0.50, cx, S*0.50);
     ctx.closePath();ctx.fill();
-    // body
-    ctx.beginPath();ctx.ellipse(cx, wy+S*0.03, S*0.05, S*0.07, 0, 0, Math.PI*2);ctx.fill();
-    // tail
+    // body — narrow teardrop connecting head to tail
     ctx.beginPath();
-    ctx.moveTo(cx-S*0.05, wy+S*0.08);
-    ctx.lineTo(cx, wy+S*0.22);
-    ctx.lineTo(cx+S*0.05, wy+S*0.08);
+    ctx.ellipse(cx, S*0.55, S*0.055, S*0.12, 0, 0, Math.PI*2);
+    ctx.fill();
+    // tail — small forked triangle
+    ctx.beginPath();
+    ctx.moveTo(cx-S*0.07, S*0.65);
+    ctx.lineTo(cx, S*0.75);
+    ctx.lineTo(cx+S*0.07, S*0.65);
     ctx.closePath();ctx.fill();
-    // egg outline (bottom third)
-    ctx.lineWidth=S*0.035;
-    ctx.beginPath();ctx.ellipse(cx, S*0.78, S*0.13, S*0.16, 0, 0, Math.PI*2);ctx.stroke();
   }
 
   /* ── SVG favicon ───────────────────────────────────── */
@@ -264,7 +261,7 @@
       <button class="back" onclick="closeDetail()">‹</button>
       <div class="stitle"><h2 id="dName">—</h2><div class="sp" id="dSp">—</div></div>
       <button class="iconbtn" onclick="shareEgg()" title="Share">⤴</button>
-      <button class="iconbtn" id="cloneBtn" onclick="cloneEgg(currentId)" title="Clone"></button>
+      <button class="iconbtn" onclick="cloneEgg(currentId)" title="Clone egg"><svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="9" height="9" rx="1.8"/><path d="M2 11.5V2h9.5"/></svg></button>
       <button class="iconbtn" onclick="openEgg(currentId)" title="Edit">✎</button>
     </div>
     <div id="detailBody"></div>
@@ -401,7 +398,7 @@
 /* ============ i18n ============ */
 const T={
  en:{
-  tag:"Egg Weight-Loss Tracker",
+  tag:"Eggs Tracking",
   sub:"Weigh each egg, plot it against the ideal 15% loss line, and let the verdict tell you which way to move humidity (and when to touch temperature). Built for parrots & birds.",
   sumActive:"Incubating", sumAlert:"Need adjust", sumDue:"Weigh today",
   newegg:"New egg",
@@ -488,7 +485,7 @@ const T={
   infoTitle:"How it works & sources",
  },
  ar:{
-  tag:"متتبّع فقدان وزن البيض",
+  tag:"Eggs Tracking",
   sub:"زِن كل بيضة وقارنها بخط الفقدان المثالي (15٪)، ودَع التقييم يخبرك باتجاه ضبط الرطوبة (ومتى تلمس الحرارة). مُصمَّم للببغاوات والطيور.",
   sumActive:"تحت التحضين", sumAlert:"تحتاج ضبطًا", sumDue:"وزن اليوم",
   newegg:"بيضة جديدة",
@@ -757,7 +754,6 @@ function paintChrome(){
   set("l_name","nameL"); set("l_species","speciesL"); set("l_fresh","freshL"); set("l_date","dateL");
   set("l_days","daysL"); set("l_target","targetL"); set("l_pip","pipL"); set("l_temp","tempL");
   set("l_targetRH","targetRhL"); set("l_hatcherMode","hatcherModeL");
-  const cb=document.getElementById("cloneBtn"); if(cb){ cb.textContent=t("cloneIcon"); cb.title=t("cloneTip"); }
   const hsegs=document.querySelectorAll("#hatcherSeg button");
   hsegs[0].textContent=t("hatcherSep"); hsegs[1].textContent=t("hatcherSame");
   set("l_sched","schedL"); set("t_eggHint","eggHint"); set("t_saveEgg","saveEgg");
@@ -806,6 +802,7 @@ function renderList(){
         <div class="top"><div><div class="name">${esc(e.name||"—")}</div><div class="sp">${esc(spName(e.species))} · ${e.days}${isRTL()?"ي":"d"}${incName?" · 📦 "+esc(incName.name):""}</div></div>
           <div style="display:flex;align-items:center;gap:6px;flex:none">
             <div class="pill ${cls}">${stLabel(a.status)}</div>
+            <button class="delrow" onclick="event.stopPropagation();cloneEgg('${e.id}')" title="${t('cloneTip')}" style="font-size:13px">⊕</button>
             <button class="delrow" onclick="event.stopPropagation();quickDeleteEgg('${e.id}')" title="Delete">✕</button>
           </div></div>
         <div class="metaline">
