@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');</script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="iBird Hatching">
@@ -334,7 +335,7 @@
     <h3 id="t_measTitle"></h3>
     <p class="hint" id="measHint"></p>
     <div class="two">
-      <div><label id="l_mweight"></label><div class="stepper"><button class="sbtn" onclick="stepVal('m_weight',-0.1,0,null)">−</button><input id="m_weight" type="text" inputmode="decimal" onfocus="this.dataset.prev=this.value;this.value=''" style="pointer-events:auto;cursor:text;text-align:center"><button class="sbtn" onclick="stepVal('m_weight',0.1,0,null)">+</button></div></div>
+      <div><label id="l_mweight"></label><div class="stepper"><button class="sbtn" onclick="stepVal('m_weight',-0.1,0,null)">−</button><input id="m_weight" type="text" inputmode="decimal" onclick="this.dataset.prev=this.value;this.value=''" style="pointer-events:auto;cursor:text;text-align:center"><button class="sbtn" onclick="stepVal('m_weight',0.1,0,null)">+</button></div></div>
       <div><label id="l_mdate"></label><input id="m_date" type="date"></div>
     </div>
     <div class="two">
