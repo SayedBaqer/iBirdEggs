@@ -202,7 +202,7 @@ function applyUpdate(){
 </style>
 </head>
 <body>
-<div id="updateBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:var(--heat);color:#1a0e00;padding:10px 16px;align-items:center;justify-content:space-between;gap:10px;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.4);">
+<div id="updateBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:var(--heat);color:#1a0e00;padding:max(env(safe-area-inset-top),10px) 16px 10px;align-items:center;justify-content:space-between;gap:10px;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.4);">
   <span id="t_updateMsg"></span>
   <button onclick="applyUpdate()" id="t_updateBtn" style="background:#1a0e00;color:var(--heat);border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;flex:none;"></button>
 </div>
@@ -430,7 +430,7 @@ const T={
   status:"status", verdictDay:"day {d}",
   // egg modal
   eggNew:"New egg", eggEdit:"Edit egg", eggClone:"New egg — same settings",
-  cloneIcon:"⎘", cloneTip:"Clone egg (same settings, new weight)",
+  cloneIcon:"⎘", cloneTip:"Clone egg (same settings, new weight)", editTip:"Edit egg",
   eggHint:"Pick a species to auto-fill incubation days & target loss — override anything.",
   nameL:"Label / ID", speciesL:"Species", freshL:"Fresh weight (g)", dateL:"Set date (day 0)",
   daysL:"Incub. days", targetL:"Target loss %", pipL:"Pip day (loss target by)", tempL:"Set temp °C",
@@ -517,7 +517,7 @@ const T={
   tLockSame:"<b>البقاء في الحاضنة:</b> حافظ على الحرارة ≈ {h}°م — نفس حرارة التحضين، لا تخفضها لعدم وجود مرحلة فقّاسة منفصلة. ارفع الرطوبة إلى 65–70٪ وأوقف التقليب.",
   status:"الحالة", verdictDay:"اليوم {d}",
   eggNew:"بيضة جديدة", eggEdit:"تعديل البيضة", eggClone:"بيضة جديدة — نفس الإعدادات",
-  cloneIcon:"⎘", cloneTip:"نسخ البيضة (نفس الإعدادات، وزن جديد)",
+  cloneIcon:"⎘", cloneTip:"نسخ البيضة (نفس الإعدادات، وزن جديد)", editTip:"تعديل البيضة",
   eggHint:"اختر النوع لملء أيام التحضين ونسبة الفقد تلقائيًا — يمكنك تعديل أي قيمة.",
   nameL:"الاسم / المعرّف", speciesL:"النوع", freshL:"الوزن الطازج (غ)", dateL:"تاريخ الوضع (اليوم 0)",
   daysL:"أيام التحضين", targetL:"نسبة الفقد ٪", pipL:"يوم النقر (هدف الفقد عنده)", tempL:"الحرارة °م",
@@ -805,6 +805,7 @@ function renderList(){
         <div class="top"><div><div class="name">${esc(e.name||"—")}</div><div class="sp">${esc(spName(e.species))} · ${e.days}${isRTL()?"ي":"d"}${incName?" · 📦 "+esc(incName.name):""}</div></div>
           <div style="display:flex;align-items:center;gap:6px;flex:none">
             <div class="pill ${cls}">${stLabel(a.status)}</div>
+            <button class="delrow" onclick="event.stopPropagation();openEgg('${e.id}')" title="${t('editTip')}" style="color:var(--water)">✎</button>
             <button class="delrow" onclick="event.stopPropagation();cloneEgg('${e.id}')" title="${t('cloneTip')}" style="color:var(--heat)">⊕</button>
             <button class="delrow" onclick="event.stopPropagation();quickDeleteEgg('${e.id}')" title="Delete">✕</button>
           </div></div>
