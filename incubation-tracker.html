@@ -152,6 +152,9 @@
   input,select,textarea{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:11px;padding:13px;font-size:16px;font-family:var(--sans);}
   input[type=number]{font-family:var(--mono);}
   .two{display:flex;gap:10px;} .two>div{flex:1;}
+  .stepper{display:flex;align-items:center;gap:3px;width:100%;}
+  .stepper .sbtn{width:34px;height:36px;min-width:34px;flex:none;border-radius:8px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-size:20px;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;}
+  .stepper input{flex:1;min-width:0;text-align:center;pointer-events:none;cursor:default;}
   .seg{display:flex;gap:6px;margin-top:6px;}
   .seg button{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:11px 6px;font-size:13px;font-weight:600;}
   .seg button.on{background:var(--heat);color:#251603;border-color:var(--heat);}
@@ -264,8 +267,8 @@
     <h3 id="incModalTitle">—</h3>
     <label id="l_incName"></label><input id="fi_name">
     <div class="two">
-      <div><label id="l_incTemp"></label><input id="fi_temp" type="number" step="0.1" inputmode="decimal" placeholder="37.5"></div>
-      <div><label id="l_incRh"></label><input id="fi_rh" type="number" step="1" inputmode="numeric" placeholder="45"></div>
+      <div><label id="l_incTemp"></label><div class="stepper"><button class="sbtn" onclick="stepVal('fi_temp',-0.1,35,40)">−</button><input id="fi_temp" value="37.5" readonly><button class="sbtn" onclick="stepVal('fi_temp',0.1,35,40)">+</button></div></div>
+      <div><label id="l_incRh"></label><div class="stepper"><button class="sbtn" onclick="stepVal('fi_rh',-1,20,95)">−</button><input id="fi_rh" value="45" readonly><button class="sbtn" onclick="stepVal('fi_rh',1,20,95)">+</button></div></div>
     </div>
     <label id="l_turnType"></label>
     <div class="seg" id="turnSeg">
@@ -299,9 +302,9 @@
     </div>
     <div class="two">
       <div><label id="l_pip"></label><input id="f_pip" type="number" step="1" inputmode="numeric"></div>
-      <div><label id="l_temp"></label><input id="f_temp" type="number" step="0.1" inputmode="decimal" placeholder="37.5"></div>
+      <div><label id="l_temp"></label><div class="stepper"><button class="sbtn" onclick="stepVal('f_temp',-0.1,35,40)">−</button><input id="f_temp" value="37.5" readonly><button class="sbtn" onclick="stepVal('f_temp',0.1,35,40)">+</button></div></div>
     </div>
-    <label id="l_targetRH"></label><input id="f_targetRH" type="number" step="1" inputmode="numeric" placeholder="45">
+    <label id="l_targetRH"></label><div class="stepper"><button class="sbtn" onclick="stepVal('f_targetRH',-1,20,95)">−</button><input id="f_targetRH" value="45" readonly><button class="sbtn" onclick="stepVal('f_targetRH',1,20,95)">+</button></div>
     <label id="l_hatcherMode"></label>
     <div class="seg" id="hatcherSeg">
       <button data-v="separate" onclick="setHatcherMode('separate')"></button>
@@ -331,12 +334,12 @@
     <h3 id="t_measTitle"></h3>
     <p class="hint" id="measHint"></p>
     <div class="two">
-      <div><label id="l_mweight"></label><input id="m_weight" type="number" step="0.01" inputmode="decimal"></div>
+      <div><label id="l_mweight"></label><input id="m_weight" type="text" inputmode="decimal" onfocus="this.select()"></div>
       <div><label id="l_mdate"></label><input id="m_date" type="date"></div>
     </div>
     <div class="two">
-      <div><label id="l_mrh"></label><input id="m_rh" type="number" step="1" inputmode="numeric" placeholder="45"></div>
-      <div><label id="l_mtemp"></label><input id="m_temp" type="number" step="0.1" inputmode="decimal" placeholder="37.5"></div>
+      <div><label id="l_mrh"></label><div class="stepper"><button class="sbtn" onclick="stepVal('m_rh',-1,20,95)">−</button><input id="m_rh" readonly><button class="sbtn" onclick="stepVal('m_rh',1,20,95)">+</button></div></div>
+      <div><label id="l_mtemp"></label><div class="stepper"><button class="sbtn" onclick="stepVal('m_temp',-0.1,35,40)">−</button><input id="m_temp" readonly><button class="sbtn" onclick="stepVal('m_temp',0.1,35,40)">+</button></div></div>
     </div>
     <label id="l_mnote"></label><input id="m_note">
     <button class="savebtn" onclick="saveMeas()" id="t_saveMeas"></button>
@@ -569,6 +572,19 @@ let eggs=load(), currentId=null, editId=null, measEggId=null, measEditId=null, s
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY))||[] }catch(e){ return [] } }
 function save(){ localStorage.setItem(KEY, JSON.stringify(eggs)); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function stepVal(id,delta,mn,mx){
+  var el=document.getElementById(id);
+  var v=parseFloat(el.value);
+  if(isNaN(v)) v=mn!=null?mn:0;
+  v=Math.round((v+delta)*1000)/1000;
+  if(mn!=null) v=Math.max(mn,v);
+  if(mx!=null) v=Math.min(mx,v);
+  var dig=String(Math.abs(delta)).includes('.')?String(Math.abs(delta)).split('.')[1].length:0;
+  el.value=v.toFixed(dig);
+}
+function normalizeNum(s){
+  return String(s).replace(/[٠-٩]/g,function(d){return d.charCodeAt(0)-0x0660;}).replace(/[۰-۹]/g,function(d){return d.charCodeAt(0)-0x06F0;});
+}
 
 const KEY_INC="drydown.incubators.v1";
 let incubators=loadInc(), editIncId=null, currentIncId=null, turnDraft="manual180";
@@ -1182,15 +1198,15 @@ function openMeas(id,mid){
   document.getElementById("t_measTitle").textContent=mid?t("editMeas"):t("measTitle");
   document.getElementById("m_weight").value=m?m.weight:"";
   document.getElementById("m_date").value=m?m.date:today();
-  document.getElementById("m_rh").value=m?(m.rh!=null?m.rh:""):(a.lastRH!=null?a.lastRH:"");
-  document.getElementById("m_temp").value=m?(m.temp!=null?m.temp:""):(a.lastTemp!=null?a.lastTemp:(e.temp||""));
+  document.getElementById("m_rh").value=m?(m.rh!=null?m.rh:45):(a.lastRH!=null?a.lastRH:45);
+  document.getElementById("m_temp").value=m?(m.temp!=null?m.temp:37.5):(a.lastTemp!=null?a.lastTemp:(e.temp||37.5));
   document.getElementById("m_note").value=m?(m.note||""):"";
   document.getElementById("measHint").innerHTML=t("measHint",{w:a.targetWeightToday.toFixed(2),l:a.targetLossToday.toFixed(1)});
   document.getElementById("measModal").classList.add("open");
   setTimeout(()=>document.getElementById("m_weight").focus(),120);
 }
 function saveMeas(){
-  const w=parseFloat(document.getElementById("m_weight").value);
+  const w=parseFloat(normalizeNum(document.getElementById("m_weight").value));
   if(!w||w<=0){ toast(t("needWeight")); return; }
   const e=eggs.find(x=>x.id===measEggId); if(!e) return;
   const rhv=document.getElementById("m_rh").value, tv=document.getElementById("m_temp").value;
