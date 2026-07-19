@@ -6,11 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <script>
 function showUpdateBar(){
-  var bar=document.getElementById('updateBar');
-  var hdr=document.querySelector('header');
-  var top=hdr?hdr.getBoundingClientRect().bottom:80;
-  bar.style.top=top+'px';
-  bar.style.display='flex';
+  document.getElementById('updateBar').style.display='flex';
 }
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').then(function(reg){
@@ -211,11 +207,6 @@ function applyUpdate(){
 </head>
 <body>
 
-<div id="updateBar" style="display:none;position:fixed;left:12px;right:12px;z-index:500;background:var(--heat);color:#1a0e00;padding:9px 16px;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:600;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.35);">
-  <span id="t_updateMsg"></span>
-  <button onclick="applyUpdate()" id="t_updateBtn" style="background:#1a0e00;color:var(--heat);border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;flex:none;"></button>
-</div>
-
 <div class="wrap">
   <header>
     <div class="toprow">
@@ -230,6 +221,10 @@ function applyUpdate(){
       </div>
     </div>
     <p class="sub" id="t_sub"></p>
+    <div id="updateBar" style="display:none;background:var(--heat);color:#1a0e00;padding:9px 16px;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:600;border-radius:12px;margin:6px 0 2px;">
+      <span id="t_updateMsg"></span>
+      <button onclick="applyUpdate()" id="t_updateBtn" style="background:#1a0e00;color:var(--heat);border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;flex:none;"></button>
+    </div>
   </header>
 
   <div class="summary">
@@ -440,6 +435,8 @@ const T={
   // egg modal
   eggNew:"New egg", eggEdit:"Edit egg", eggClone:"New egg — same settings",
   cloneIcon:"⎘", cloneTip:"Clone egg (same settings, new weight)", editTip:"Edit egg",
+  dataTitle:"Data", exportBtn:"Export data", importBtn:"Import data",
+  importedMsg:"{e} egg(s), {i} incubator(s) added.",
   eggHint:"Pick a species to auto-fill incubation days & target loss — override anything.",
   nameL:"Label / ID", speciesL:"Species", freshL:"Fresh weight (g)", dateL:"Set date (day 0)",
   daysL:"Incub. days", targetL:"Target loss %", pipL:"Pip day (loss target by)", tempL:"Set temp °C",
@@ -527,6 +524,8 @@ const T={
   status:"الحالة", verdictDay:"اليوم {d}",
   eggNew:"بيضة جديدة", eggEdit:"تعديل البيضة", eggClone:"بيضة جديدة — نفس الإعدادات",
   cloneIcon:"⎘", cloneTip:"نسخ البيضة (نفس الإعدادات، وزن جديد)", editTip:"تعديل البيضة",
+  dataTitle:"البيانات", exportBtn:"تصدير البيانات", importBtn:"استيراد البيانات",
+  importedMsg:"تمت إضافة {e} بيضة و{i} حاضنة.",
   eggHint:"اختر النوع لملء أيام التحضين ونسبة الفقد تلقائيًا — يمكنك تعديل أي قيمة.",
   nameL:"الاسم / المعرّف", speciesL:"النوع", freshL:"الوزن الطازج (غ)", dateL:"تاريخ الوضع (اليوم 0)",
   daysL:"أيام التحضين", targetL:"نسبة الفقد ٪", pipL:"يوم النقر (هدف الفقد عنده)", tempL:"الحرارة °م",
@@ -807,7 +806,7 @@ function renderList(){
       let dueLine="";
       if(a.status!=="lockdown"&&a.nextDay!=null){
         if(a.due){ const over=a.elapsed>a.nextDay; dueLine=`<div class="due">⏰ ${over?t("dueOver"):t("dueToday")}</div>`; }
-        else dueLine=`<div class="due future">○ ${t("dueNext")}: ${t("day").toLowerCase()} ${a.nextDay} · ${fmtD(a.nextDate)}</div>`;
+        else dueLine=`<div class="due future">○ ${t("dueNext")}: [${t("day").toLowerCase()} ${a.nextDay} · ${fmtD(a.nextDate)}]</div>`;
       }
       const incName=e.incubatorId&&incubators.find(i=>i.id===e.incubatorId);
       return `<div class="egg" onclick="openDetail('${e.id}')">
@@ -1360,11 +1359,53 @@ const INFO_AR=`
 <p>التقليب يمنع التصاق الجنين بغشاء القشرة. الزاوية المهمة هي <b>~43–45° عن الوضع الرأسي لكل جهة</b> [12][14][15] — المُقلِّب اليدوي يميل إلى تلك النقطة، والمُقلِّب الأرجوحي يتمايل خلالها، والمُدوِّر الأسطواني يدور باستمرار.</p>
 <p>التكرار أهم مما يتوقّع كثيرون: تجارب الدواجن تُظهر أن الفقس ينخفض <b>~6.6٪ عند 12 مرة/يوم، ~15.5٪ عند 6 مرات/يوم، ~19.7٪ عند 3 مرات/يوم</b> مقارنة بأساس 24 مرة/يوم [12]. للتقليب اليدوي يعني ذلك <b>5–7 مرات/يوم كحد أدنى، بعدد فردي</b> لتنتهي البيضة كل ليلة على جانب مختلف عن الليلة السابقة [13][14]. مصادر خاصة بالببغاوات تذكر أن بيضها يُقلَّب أحيانًا أكثر من الدواجن، خصوصًا في الأسبوع الأول [3][7]. يتوقف التقليب دائمًا عند الإغلاق.</p>
 <h3>المصادر</h3>`;
+/* ============ export / import ============ */
+function exportData(){
+  const out={v:1,exportedAt:new Date().toISOString(),eggs:eggs,incubators:incubators};
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download="ibird-eggs-"+today()+".json"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function importData(){
+  const inp=document.createElement("input");
+  inp.type="file"; inp.accept=".json,application/json";
+  inp.onchange=function(){
+    const f=inp.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=function(ev){
+      try{
+        const d=JSON.parse(ev.target.result);
+        const inEggs=Array.isArray(d.eggs)?d.eggs:[];
+        const inIncs=Array.isArray(d.incubators)?d.incubators:[];
+        if(!inEggs.length&&!inIncs.length){alert("No data found in file.");return;}
+        const existIds=new Set(eggs.map(e=>e.id));
+        const existIncIds=new Set(incubators.map(i=>i.id));
+        let ae=0,ai=0;
+        inEggs.forEach(e=>{if(e&&e.id&&!existIds.has(e.id)){eggs.push(e);ae++;}});
+        inIncs.forEach(i=>{if(i&&i.id&&!existIncIds.has(i.id)){incubators.push(i);ai++;}});
+        save(); saveIncs(); renderList();
+        alert(t("importedMsg",{e:ae,i:ai}));
+      }catch(e){alert("Invalid file.");}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
 function renderInfo(){
   const body=isRTL()?INFO_AR:INFO_EN;
   const rows=SOURCES.map(s=>`<tr><td><span class="ref">[${s.n}]</span> ${esc(s.a)}<br><a href="${s.u}" target="_blank" rel="noopener">${s.u}</a></td></tr>`).join("");
-  document.getElementById("infoBody").innerHTML=body+`<table class="srctable"><tbody>${rows}</tbody></table>
-    <p class="foot" style="margin-top:20px">Dry-Down · offline tool · data on-device only</p>`;
+  const dataSec=`<div style="margin:0 0 24px;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:14px">
+    <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">${t("dataTitle")}</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button onclick="exportData()" style="flex:1;min-width:120px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">💾 ${t("exportBtn")}</button>
+      <button onclick="importData()" style="flex:1;min-width:120px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">📥 ${t("importBtn")}</button>
+    </div>
+  </div>`;
+  document.getElementById("infoBody").innerHTML=dataSec+body+`<table class="srctable"><tbody>${rows}</tbody></table>
+    <p class="foot" style="margin-top:20px">iBird Eggs · offline tool · data on-device only</p>`;
   document.getElementById("t_infoTitle").textContent=t("infoTitle");
 }
 function openInfo(){ renderInfo(); document.getElementById("infoScreen").classList.add("open"); document.body.style.overflow="hidden"; }
