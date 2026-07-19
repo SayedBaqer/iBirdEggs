@@ -10,55 +10,69 @@
 <meta name="theme-color" content="#16110c">
 <title>Eggs Tracking</title>
 <script>
-/* Generate app icons at runtime so everything stays in one file.
-   SVG favicon for browsers; canvas-PNG apple-touch-icon for iOS. */
+/* App icon — chick hatching from egg, matching the iBird logo.
+   SVG for browser favicon; drawn onto canvas for iOS touch icon. */
 (function(){
-  /* ── shared drawing helper ─────────────────────────── */
-  function drawIcon(ctx, S){
-    var cx=S/2, lw=Math.max(2, S*0.046);
+  var SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
     // black background
-    ctx.fillStyle='#16110c';
-    ctx.fillRect(0,0,S,S);
-    // gold stroke only — no fills
-    ctx.strokeStyle='#f0a02a';
-    ctx.lineWidth=lw;
-    ctx.lineCap='round';
-    ctx.lineJoin='round';
-    // head circle
-    ctx.beginPath();
-    ctx.arc(cx, S*0.34, S*0.09, 0, Math.PI*2);
-    ctx.stroke();
-    // left wing: single arc sweeping high-left from body centre to tip
-    ctx.beginPath();
-    ctx.moveTo(cx, S*0.50);
-    ctx.quadraticCurveTo(S*0.20, S*0.14, S*0.04, S*0.49);
-    ctx.stroke();
+    +'<rect width="100" height="100" fill="#16110c"/>'
+    // dark-blue glow circle
+    +'<circle cx="50" cy="50" r="40" fill="#1a1848"/>'
+    // left wing (behind body)
+    +'<path d="M31 67 C22 59 24 46 31 43 C33 51 35 58 37 63Z" fill="#FFC000" stroke="#252840" stroke-width="2" stroke-linejoin="round"/>'
     // right wing (mirror)
-    ctx.beginPath();
-    ctx.moveTo(cx, S*0.50);
-    ctx.quadraticCurveTo(S*0.80, S*0.14, S*0.96, S*0.49);
-    ctx.stroke();
-    // body oval
-    ctx.beginPath();
-    ctx.ellipse(cx, S*0.59, S*0.052, S*0.105, 0, 0, Math.PI*2);
-    ctx.stroke();
-    // short neck line bridging head-bottom to body-top
-    ctx.beginPath();
-    ctx.moveTo(cx, S*0.43);
-    ctx.lineTo(cx, S*0.485);
-    ctx.stroke();
-  }
+    +'<path d="M69 67 C78 59 76 46 69 43 C67 51 65 58 63 63Z" fill="#FFC000" stroke="#252840" stroke-width="2" stroke-linejoin="round"/>'
+    // body
+    +'<ellipse cx="50" cy="65" rx="18" ry="13" fill="#FFD116" stroke="#252840" stroke-width="2.2"/>'
+    // head
+    +'<circle cx="50" cy="41" r="19" fill="#FFD116" stroke="#252840" stroke-width="2.2"/>'
+    // feather tufts
+    +'<path d="M44 23 C42 14 47 13 46 21" fill="#FFD116" stroke="#252840" stroke-width="2.2" stroke-linecap="round"/>'
+    +'<path d="M50 22 C50 12 54 11 53 20" fill="#FFD116" stroke="#252840" stroke-width="2.2" stroke-linecap="round"/>'
+    +'<path d="M56 23 C58 14 53 13 54 21" fill="#FFD116" stroke="#252840" stroke-width="2.2" stroke-linecap="round"/>'
+    // cheek blush
+    +'<circle cx="36" cy="46" r="5" fill="#FFB347" opacity="0.38"/>'
+    +'<circle cx="64" cy="46" r="5" fill="#FFB347" opacity="0.38"/>'
+    // left eye
+    +'<circle cx="42" cy="39" r="6" fill="white" stroke="#252840" stroke-width="1.8"/>'
+    +'<circle cx="43" cy="39.5" r="3.6" fill="#1E1E3A"/>'
+    +'<circle cx="41.5" cy="37.8" r="1.4" fill="white"/>'
+    // right eye
+    +'<circle cx="58" cy="39" r="6" fill="white" stroke="#252840" stroke-width="1.8"/>'
+    +'<circle cx="59" cy="39.5" r="3.6" fill="#1E1E3A"/>'
+    +'<circle cx="57.5" cy="37.8" r="1.4" fill="white"/>'
+    // beak upper (orange)
+    +'<path d="M44 49 Q50 45 56 49 L53 54 Q50 56 47 54Z" fill="#FF8000" stroke="#252840" stroke-width="1.8"/>'
+    // beak open mouth (dark orange)
+    +'<path d="M44 49 Q50 54 56 49 L53 54 Q50 56 47 54Z" fill="#CC3300"/>'
+    // egg shell (covers body bottom)
+    +'<path d="M17 73 Q20 61 50 61 Q80 61 83 73 Q80 84 50 86 Q20 84 17 73Z" fill="#F5F0E0" stroke="#252840" stroke-width="2.2"/>'
+    // shell inner shading line
+    +'<path d="M23 73 Q26 66 50 66 Q74 66 77 73" fill="none" stroke="#D8D0B8" stroke-width="1.5"/>'
+    // shell crack left
+    +'<path d="M30 62 L27 68 L34 65 L30 73" fill="none" stroke="#252840" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    // shell crack right
+    +'<path d="M70 62 L73 68 L66 65 L70 73" fill="none" stroke="#252840" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    // drop shadow
+    +'<ellipse cx="50" cy="88" rx="24" ry="3" fill="#000" opacity="0.28"/>'
+    +'</svg>';
 
-  /* ── SVG favicon (resolution-independent) ─────────── */
-  var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#16110c"/><g stroke="#f0a02a" stroke-width="4.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="34" r="9"/><line x1="50" y1="43" x2="50" y2="48.5"/><path d="M50 50 Q20 14 4 49"/><path d="M50 50 Q80 14 96 49"/><ellipse cx="50" cy="59" rx="5.2" ry="10.5"/></g></svg>';
-  var fi=document.createElement('link');fi.rel='icon';fi.type='image/svg+xml';fi.href='data:image/svg+xml;base64,'+btoa(svg);
+  // favicon (SVG, sharp at any size)
+  var fi=document.createElement('link');
+  fi.rel='icon';fi.type='image/svg+xml';
+  fi.href='data:image/svg+xml;base64,'+btoa(SVG);
   document.head.appendChild(fi);
 
-  /* ── Apple touch icon (180×180 PNG) ────────────────── */
-  var ac=document.createElement('canvas');ac.width=ac.height=180;
-  drawIcon(ac.getContext('2d'),180);
-  var ai=document.createElement('link');ai.rel='apple-touch-icon';ai.href=ac.toDataURL('image/png');
-  document.head.appendChild(ai);
+  // apple-touch-icon: render SVG onto 180×180 canvas → PNG
+  var img=new Image();
+  img.onload=function(){
+    var ac=document.createElement('canvas');ac.width=ac.height=180;
+    ac.getContext('2d').drawImage(img,0,0,180,180);
+    var ai=document.createElement('link');
+    ai.rel='apple-touch-icon';ai.href=ac.toDataURL('image/png');
+    document.head.appendChild(ai);
+  };
+  img.src='data:image/svg+xml;base64,'+btoa(SVG);
 })();
 </script>
 <style>
