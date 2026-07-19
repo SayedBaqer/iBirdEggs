@@ -1,7 +1,7 @@
 // iBird Eggs — Service Worker
 // Network-first for navigation: always fetches latest HTML when online,
 // falls back to cache when offline.
-const CACHE = 'ibird-v3';
+const CACHE = 'ibird-v4'; // Eggs Track rename
 
 self.addEventListener('install', () => {
   // Do NOT skipWaiting here — wait for page to post SKIP_WAITING after user

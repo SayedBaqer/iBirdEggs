@@ -5,37 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <script>
+var _swReg=null;
 function showUpdateBar(){
   document.getElementById('updateBar').style.display='flex';
 }
+function trackInstalling(sw){
+  sw.addEventListener('statechange',function(){
+    if(sw.state==='installed'&&navigator.serviceWorker.controller) showUpdateBar();
+  });
+}
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').then(function(reg){
-    if(reg.waiting&&navigator.serviceWorker.controller){showUpdateBar();}
-    reg.addEventListener('updatefound',function(){
-      var sw=reg.installing;
-      sw.addEventListener('statechange',function(){
-        if(sw.state==='installed'&&navigator.serviceWorker.controller){
-          showUpdateBar();
-        }
-      });
+    _swReg=reg;
+    if(reg.waiting&&navigator.serviceWorker.controller) showUpdateBar();
+    if(reg.installing) trackInstalling(reg.installing);
+    reg.addEventListener('updatefound',function(){ trackInstalling(reg.installing); });
+    // Re-check every time the user switches back to the app
+    document.addEventListener('visibilitychange',function(){
+      if(document.visibilityState==='visible') reg.update();
     });
+    // Force an immediate check so returning users always get the latest
+    reg.update();
   });
 }
 function applyUpdate(){
   document.getElementById('updateBar').style.display='none';
+  var doReload=function(){ window.location.reload(); };
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.ready.then(function(reg){
+    navigator.serviceWorker.addEventListener('controllerchange',doReload);
+    (_swReg&&_swReg.waiting
+      ? Promise.resolve(_swReg)
+      : navigator.serviceWorker.ready
+    ).then(function(reg){
       if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
-      window.location.reload();
+      else doReload();
     });
-  } else { window.location.reload(); }
+  } else { doReload(); }
 }
 </script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="iBird Hatching">
+<meta name="apple-mobile-web-app-title" content="Eggs Track">
 <meta name="theme-color" content="#16110c">
-<title>Eggs Tracking · iBird Hatching Machine</title>
+<title>Eggs Track · iBird</title>
 <script>
 /* App icon — chick hatching from egg, matching the iBird logo.
    SVG for browser favicon; drawn onto canvas for iOS touch icon. */
@@ -219,7 +231,7 @@ function applyUpdate(){
     <div class="toprow">
       <div class="brand">
         <div class="glyph"><a href="https://www.instagram.com/ibirds" target="_blank" rel="noopener"><img id="appLogo" width="44" height="44" style="display:block"></a></div>
-        <div><h1 id="t_tag"></h1><div class="tag">iBird Hatching Machine</div></div>
+        <div><h1 id="t_tag"></h1><div class="tag">by iBird</div></div>
       </div>
       <div class="toggles">
         <button class="chip" onclick="openIncList()" id="incBtn">📦</button>
@@ -398,7 +410,7 @@ function applyUpdate(){
 /* ============ i18n ============ */
 const T={
  en:{
-  tag:"Eggs Tracking",
+  tag:"Eggs Track",
   updateMsg:"New version available", updateBtn:"Refresh",
   sub:"Weigh each egg, plot it against the ideal 15% loss line, and let the verdict tell you which way to move humidity (and when to touch temperature). Built for parrots & birds.",
   sumActive:"Incubating", sumAlert:"Need adjust", sumDue:"Weigh today",
@@ -495,7 +507,7 @@ const T={
   tourNext:"Next →", tourPrev:"‹ Back", tourDone:"Let's go!", tourSkip:"Skip tour",
  },
  ar:{
-  tag:"Eggs Tracking",
+  tag:"Eggs Track",
   updateMsg:"يوجد إصدار جديد", updateBtn:"تحديث",
   sub:"زِن كل بيضة وقارنها بخط الفقدان المثالي (15٪)، ودَع التقييم يخبرك باتجاه ضبط الرطوبة (ومتى تلمس الحرارة). مُصمَّم للببغاوات والطيور.",
   sumActive:"تحت التحضين", sumAlert:"تحتاج ضبطًا", sumDue:"وزن اليوم",
@@ -1414,7 +1426,7 @@ function renderSettings(){
       ${body}
       <table class="srctable"><tbody>${rows}</tbody></table>
     </div>
-    <p style="text-align:center;font-size:11px;color:var(--muted);margin:16px 0 8px">© iBird Hatching Machine &nbsp;·&nbsp; <a href="https://www.instagram.com/ibirds" target="_blank" rel="noopener" style="color:var(--heat);text-decoration:none">@ibirds</a></p>`;
+    <p style="text-align:center;font-size:11px;color:var(--muted);margin:16px 0 8px">© Eggs Track · iBird &nbsp;·&nbsp; <a href="https://www.instagram.com/ibirds" target="_blank" rel="noopener" style="color:var(--heat);text-decoration:none">@ibirds</a></p>`;
 }
 function setLang(l){ lang=l; localStorage.setItem("drydown.lang",l); paintChrome(); renderList(); renderSettings();
   if(document.getElementById("detail").classList.contains("open")&&currentId) openDetail(currentId);
@@ -1434,7 +1446,7 @@ function closeSettings(){
 /* ============ guided tour ============ */
 const TOUR_STEPS={
   en:[
-    {icon:"🥚",title:"Welcome to iBird Eggs",body:"Monitor egg weight loss during incubation. Healthy eggs lose around 13–15% of their fresh weight before lockdown — this app tracks every gram so you know when to act.",ex:null},
+    {icon:"🥚",title:"Welcome to Eggs Track",body:"Monitor egg weight loss during incubation. Healthy eggs lose around 13–15% of their fresh weight before lockdown — this app tracks every gram so you know when to act.",ex:null},
     {icon:"➕",title:"Add Your First Egg",body:'Tap <b>+ New Egg</b> on the home screen. Pick the species to auto-fill incubation days and target loss %. Enter the <b>fresh weight in grams</b> on set day (Day 0).',
      ex:`<div style="font-size:12px"><b>Example:</b><br>🐔 Chicken · Fresh weight: <b>62.4 g</b> · Day 0: today<br>→ 21 days · Target loss: 12% · Pip day: 18</div>`},
     {icon:"⚖️",title:"Weigh on Schedule",body:'Open an egg and tap <b>Add weight</b>. Record the weight in grams on each scheduled day. The home card shows your next weigh-in so you never miss one.',
@@ -1452,7 +1464,7 @@ const TOUR_STEPS={
     {icon:"💾",title:"Backup & Share",body:'Tap <b>ⓘ</b> → <b>Export data</b> to save a backup file. Share it with another device or breeder who can <b>Import</b> it — all eggs and incubators transfer in one tap.',ex:null},
   ],
   ar:[
-    {icon:"🥚",title:"مرحبًا في iBird Eggs",body:"تابع فقدان وزن البيض خلال فترة التحضين. البيض الصحي يفقد حوالي 13–15٪ من وزنه الطازج قبل الإغلاق — التطبيق يتتبّع كل غرام حتى تعرف متى تتدخّل.",ex:null},
+    {icon:"🥚",title:"مرحبًا في Eggs Track",body:"تابع فقدان وزن البيض خلال فترة التحضين. البيض الصحي يفقد حوالي 13–15٪ من وزنه الطازج قبل الإغلاق — التطبيق يتتبّع كل غرام حتى تعرف متى تتدخّل.",ex:null},
     {icon:"➕",title:"أضف أول بيضة",body:'اضغط <b>+ بيضة جديدة</b> في الشاشة الرئيسية. اختر النوع لملء الأيام والهدف تلقائيًا. أدخل <b>الوزن الطازج بالغرامات</b> في يوم الوضع (اليوم 0).',
      ex:`<div style="font-size:12px"><b>مثال:</b><br>🐔 دجاج · الوزن الطازج: <b>62.4 غ</b> · اليوم 0: اليوم<br>← 21 يومًا · هدف الفقد: 12٪ · يوم النقر: 18</div>`},
     {icon:"⚖️",title:"وزّن بحسب الجدول",body:'افتح البيضة واضغط <b>أضف وزنًا</b>. سجّل الوزن بالغرام في كل يوم مجدوَل. بطاقة الرئيسية تُظهر موعد الوزن التالي حتى لا تفوّته.',
@@ -1535,7 +1547,7 @@ function exportData(){
   const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
-  a.href=url; a.download="ibird-eggs-"+today()+".json"; a.click();
+  a.href=url; a.download="eggs-track-"+today()+".json"; a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function importData(){
