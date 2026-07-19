@@ -74,7 +74,7 @@ function applyUpdate(){
   html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);height:100%;width:100%;overflow:hidden;}
   body{position:fixed;inset:0;width:100%;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:pan-y;}
   [dir=rtl]{font-family:var(--sans);}
-  .wrap{max-width:680px;margin:0 auto;padding:0 16px calc(24px + env(safe-area-inset-bottom));height:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  .wrap{max-width:680px;margin:0 auto;padding:0 16px calc(48px + env(safe-area-inset-bottom));height:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
   header{padding:18px 0 14px;position:sticky;top:0;background:linear-gradient(var(--bg),var(--bg) 72%,rgba(22,17,12,0));z-index:30;}
   .toprow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
   .brand{display:flex;align-items:center;gap:11px;min-width:0;}
@@ -1632,6 +1632,10 @@ enableScreenBackSwipe(document.getElementById("incDetail"),closeIncDetail);
 
 paintChrome(); renderList();
 </script>
+<div style="position:fixed;bottom:0;left:0;right:0;z-index:40;background:var(--bg);border-top:1px solid var(--line);padding:8px 16px calc(8px + env(safe-area-inset-bottom));text-align:center;font-size:11px;color:var(--muted);">
+  © Eggs Track · iBird &nbsp;·&nbsp; <a href="https://www.instagram.com/ibirds" target="_blank" rel="noopener" style="color:var(--heat);text-decoration:none">@ibirds</a>
+</div>
+
 <!-- GUIDED TOUR -->
 <div id="tourOverlay" style="display:none;position:fixed;inset:0;z-index:800;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.7);">
   <div style="background:var(--bg);border-radius:24px;width:100%;max-width:380px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.5);">
