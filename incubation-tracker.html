@@ -4,7 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');</script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(function(reg){
+    reg.addEventListener('updatefound',function(){
+      var sw=reg.installing;
+      sw.addEventListener('statechange',function(){
+        if(sw.state==='installed'&&navigator.serviceWorker.controller){
+          document.getElementById('updateBar').style.display='flex';
+        }
+      });
+    });
+  });
+}
+function applyUpdate(){
+  document.getElementById('updateBar').style.display='none';
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.ready.then(function(reg){
+      if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
+      window.location.reload();
+    });
+  } else { window.location.reload(); }
+}
+</script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="iBird Hatching">
@@ -180,6 +202,10 @@
 </style>
 </head>
 <body>
+<div id="updateBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:var(--heat);color:#1a0e00;padding:10px 16px;align-items:center;justify-content:space-between;gap:10px;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.4);">
+  <span id="t_updateMsg"></span>
+  <button onclick="applyUpdate()" id="t_updateBtn" style="background:#1a0e00;color:var(--heat);border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;flex:none;"></button>
+</div>
 <div class="wrap">
   <header>
     <div class="toprow">
@@ -356,6 +382,7 @@
 const T={
  en:{
   tag:"Eggs Tracking",
+  updateMsg:"New version available", updateBtn:"Refresh",
   sub:"Weigh each egg, plot it against the ideal 15% loss line, and let the verdict tell you which way to move humidity (and when to touch temperature). Built for parrots & birds.",
   sumActive:"Incubating", sumAlert:"Need adjust", sumDue:"Weigh today",
   newegg:"New egg",
@@ -443,6 +470,7 @@ const T={
  },
  ar:{
   tag:"Eggs Tracking",
+  updateMsg:"يوجد إصدار جديد", updateBtn:"تحديث",
   sub:"زِن كل بيضة وقارنها بخط الفقدان المثالي (15٪)، ودَع التقييم يخبرك باتجاه ضبط الرطوبة (ومتى تلمس الحرارة). مُصمَّم للببغاوات والطيور.",
   sumActive:"تحت التحضين", sumAlert:"تحتاج ضبطًا", sumDue:"وزن اليوم",
   newegg:"بيضة جديدة",
@@ -720,7 +748,7 @@ function paintChrome(){
   document.documentElement.lang=lang; document.documentElement.dir=isRTL()?"rtl":"ltr";
   document.getElementById("langBtn").textContent = isRTL()?"EN":"ع";
   const set=(id,k)=>{const el=document.getElementById(id); if(el) el.textContent=t(k);};
-  set("t_tag","tag"); set("t_sub","sub");
+  set("t_tag","tag"); set("t_sub","sub"); set("t_updateMsg","updateMsg"); set("t_updateBtn","updateBtn");
   set("t_sumActive","sumActive"); set("t_sumAlert","sumAlert"); set("t_sumDue","sumDue");
   set("t_newegg","newegg");
   document.getElementById("t_foot").textContent=t("foot");
