@@ -209,6 +209,7 @@
       <button class="back" onclick="closeDetail()">‹</button>
       <div class="stitle"><h2 id="dName">—</h2><div class="sp" id="dSp">—</div></div>
       <button class="iconbtn" onclick="shareEgg()" title="Share">⤴</button>
+      <button class="iconbtn" id="cloneBtn" onclick="cloneEgg(currentId)" title="Clone"></button>
       <button class="iconbtn" onclick="openEgg(currentId)" title="Edit">✎</button>
     </div>
     <div id="detailBody"></div>
@@ -392,7 +393,8 @@ const T={
   tLockSame:"<b>Staying in the incubator:</b> keep temp ≈ {h}°C — same as incubation, don't drop it since there's no separate hatcher stage. Raise RH to 65–70% and stop turning.",
   status:"status", verdictDay:"day {d}",
   // egg modal
-  eggNew:"New egg", eggEdit:"Edit egg",
+  eggNew:"New egg", eggEdit:"Edit egg", eggClone:"New egg — same settings",
+  cloneIcon:"⎘", cloneTip:"Clone egg (same settings, new weight)",
   eggHint:"Pick a species to auto-fill incubation days & target loss — override anything.",
   nameL:"Label / ID", speciesL:"Species", freshL:"Fresh weight (g)", dateL:"Set date (day 0)",
   daysL:"Incub. days", targetL:"Target loss %", pipL:"Pip day (loss target by)", tempL:"Set temp °C",
@@ -477,7 +479,8 @@ const T={
   tLock:"<b>الفقّاسة:</b> اضبط ≈ {h}°م (أقل بنحو 0.4°م من التحضين) ورطوبة 65–70٪.",
   tLockSame:"<b>البقاء في الحاضنة:</b> حافظ على الحرارة ≈ {h}°م — نفس حرارة التحضين، لا تخفضها لعدم وجود مرحلة فقّاسة منفصلة. ارفع الرطوبة إلى 65–70٪ وأوقف التقليب.",
   status:"الحالة", verdictDay:"اليوم {d}",
-  eggNew:"بيضة جديدة", eggEdit:"تعديل البيضة",
+  eggNew:"بيضة جديدة", eggEdit:"تعديل البيضة", eggClone:"بيضة جديدة — نفس الإعدادات",
+  cloneIcon:"⎘", cloneTip:"نسخ البيضة (نفس الإعدادات، وزن جديد)",
   eggHint:"اختر النوع لملء أيام التحضين ونسبة الفقد تلقائيًا — يمكنك تعديل أي قيمة.",
   nameL:"الاسم / المعرّف", speciesL:"النوع", freshL:"الوزن الطازج (غ)", dateL:"تاريخ الوضع (اليوم 0)",
   daysL:"أيام التحضين", targetL:"نسبة الفقد ٪", pipL:"يوم النقر (هدف الفقد عنده)", tempL:"الحرارة °م",
@@ -699,6 +702,7 @@ function paintChrome(){
   set("l_name","nameL"); set("l_species","speciesL"); set("l_fresh","freshL"); set("l_date","dateL");
   set("l_days","daysL"); set("l_target","targetL"); set("l_pip","pipL"); set("l_temp","tempL");
   set("l_targetRH","targetRhL"); set("l_hatcherMode","hatcherModeL");
+  const cb=document.getElementById("cloneBtn"); if(cb){ cb.textContent=t("cloneIcon"); cb.title=t("cloneTip"); }
   const hsegs=document.querySelectorAll("#hatcherSeg button");
   hsegs[0].textContent=t("hatcherSep"); hsegs[1].textContent=t("hatcherSame");
   set("l_sched","schedL"); set("t_eggHint","eggHint"); set("t_saveEgg","saveEgg");
@@ -996,6 +1000,28 @@ function openEgg(id){
     document.getElementById("eggDelBtn").style.display="none";
     setHatcherMode("separate");
   }
+  setSched(schedDraft.mode);
+  document.getElementById("eggModal").classList.add("open");
+}
+function cloneEgg(id){
+  const src=eggs.find(x=>x.id===id); if(!src) return;
+  editId=null; fillSpecies();
+  document.getElementById("eggModalTitle").textContent=t("eggClone");
+  let si=SPECIES.findIndex(s=>s.g===src.species); if(si<0) si=0;
+  document.getElementById("f_species").value=si;
+  document.getElementById("f_name").value="";
+  document.getElementById("f_fresh").value="";
+  document.getElementById("f_date").value=today();
+  document.getElementById("f_days").value=src.days;
+  document.getElementById("f_target").value=src.target;
+  document.getElementById("f_pip").value=src.pip;
+  document.getElementById("f_temp").value=src.temp||37.5;
+  document.getElementById("f_targetRH").value=src.targetRH||RH_MID[SPECIES[si].k]||45;
+  fillIncubatorSelect(src.incubatorId);
+  schedDraft=Object.assign({mode:"everyN",n:3,days:[0,4,8,12]}, src.schedule||{});
+  rhHintShow(SPECIES[si].k);
+  document.getElementById("eggDelBtn").style.display="none";
+  setHatcherMode(src.noHatcher?"same":"separate");
   setSched(schedDraft.mode);
   document.getElementById("eggModal").classList.add("open");
 }
