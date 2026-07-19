@@ -806,7 +806,7 @@ function renderList(){
       let dueLine="";
       if(a.status!=="lockdown"&&a.nextDay!=null){
         if(a.due){ const over=a.elapsed>a.nextDay; dueLine=`<div class="due">⏰ ${over?t("dueOver"):t("dueToday")}</div>`; }
-        else dueLine=`<div class="due future">○ ${t("dueNext")}: [${t("day").toLowerCase()} ${a.nextDay} · ${fmtD(a.nextDate)}]</div>`;
+        else dueLine=`<div class="due future">○ ${t("dueNext")}: ${t("day").toLowerCase()} ${a.nextDay} · [${fmtD(a.nextDate)}]</div>`;
       }
       const incName=e.incubatorId&&incubators.find(i=>i.id===e.incubatorId);
       return `<div class="egg" onclick="openDetail('${e.id}')">
