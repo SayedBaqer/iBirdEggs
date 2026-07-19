@@ -6,9 +6,64 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="DryDown">
+<meta name="apple-mobile-web-app-title" content="iBird Eggs">
 <meta name="theme-color" content="#16110c">
-<title>Dry-Down · Egg Incubation Tracker</title>
+<title>iBird Eggs · Incubation Tracker</title>
+<script>
+/* Generate app icons at runtime so everything stays in one file.
+   SVG favicon for browsers; canvas-PNG apple-touch-icon for iOS. */
+(function(){
+  /* ── shared drawing helper ─────────────────────────── */
+  function drawIcon(ctx, S){
+    var cx=S/2, G='#f0a02a', BG='#16110c', r=S*0.2;
+    // rounded-rect background
+    ctx.fillStyle=BG;
+    ctx.beginPath();
+    ctx.moveTo(r,0);ctx.lineTo(S-r,0);ctx.arcTo(S,0,S,r,r);
+    ctx.lineTo(S,S-r);ctx.arcTo(S,S,S-r,S,r);
+    ctx.lineTo(r,S);ctx.arcTo(0,S,0,S-r,r);
+    ctx.lineTo(0,r);ctx.arcTo(0,0,r,0,r);
+    ctx.closePath();ctx.fill();
+    ctx.fillStyle=G; ctx.strokeStyle=G;
+    var wy=S*0.42, wh=S*0.16;
+    // left wing
+    ctx.beginPath();
+    ctx.moveTo(cx,wy);
+    ctx.quadraticCurveTo(cx*0.7,wy-wh, S*0.12, wy+wh*0.5);
+    ctx.quadraticCurveTo(cx*0.6, wy-wh*0.1, cx, wy);
+    ctx.closePath();ctx.fill();
+    // right wing (mirror)
+    ctx.beginPath();
+    ctx.moveTo(cx,wy);
+    ctx.quadraticCurveTo(cx+cx*0.3+cx*0.7*0.3, wy-wh, S*0.88, wy+wh*0.5);
+    ctx.quadraticCurveTo(cx+cx*0.4, wy-wh*0.1, cx, wy);
+    ctx.closePath();ctx.fill();
+    // body
+    ctx.beginPath();ctx.ellipse(cx, wy+S*0.03, S*0.05, S*0.07, 0, 0, Math.PI*2);ctx.fill();
+    // tail
+    ctx.beginPath();
+    ctx.moveTo(cx-S*0.05, wy+S*0.08);
+    ctx.lineTo(cx, wy+S*0.22);
+    ctx.lineTo(cx+S*0.05, wy+S*0.08);
+    ctx.closePath();ctx.fill();
+    // egg outline (bottom third)
+    ctx.lineWidth=S*0.035;
+    ctx.beginPath();ctx.ellipse(cx, S*0.78, S*0.13, S*0.16, 0, 0, Math.PI*2);ctx.stroke();
+  }
+
+  /* ── SVG favicon ───────────────────────────────────── */
+  var fc=document.createElement('canvas');fc.width=fc.height=64;
+  drawIcon(fc.getContext('2d'),64);
+  var fi=document.createElement('link');fi.rel='icon';fi.type='image/png';fi.href=fc.toDataURL();
+  document.head.appendChild(fi);
+
+  /* ── Apple touch icon (180×180 PNG) ────────────────── */
+  var ac=document.createElement('canvas');ac.width=ac.height=180;
+  drawIcon(ac.getContext('2d'),180);
+  var ai=document.createElement('link');ai.rel='apple-touch-icon';ai.href=ac.toDataURL('image/png');
+  document.head.appendChild(ai);
+})();
+</script>
 <style>
   :root{
     --bg:#16110c; --bg2:#1f1812; --panel:#241c14; --shell:#f3e9d6; --shell-ink:#2a2118;
