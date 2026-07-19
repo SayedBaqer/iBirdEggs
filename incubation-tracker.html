@@ -45,7 +45,7 @@ function applyUpdate(){
   var ai=document.createElement('link');ai.rel='apple-touch-icon';ai.href=LOGO;document.head.appendChild(ai);
   document.addEventListener('DOMContentLoaded',function(){
     var el=document.getElementById('appLogo');if(el)el.src=LOGO;
-    if(!localStorage.getItem('drydown.toured')){setTimeout(openTour,900);}
+    if(!localStorage.getItem('drydown.toured')){setTimeout(()=>openTour(true),900);}
   });
 })();
 </script>
@@ -62,7 +62,7 @@ function applyUpdate(){
   html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);height:100%;width:100%;overflow:hidden;}
   body{position:fixed;inset:0;width:100%;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:pan-y;}
   [dir=rtl]{font-family:var(--sans);}
-  .wrap{max-width:680px;margin:0 auto;padding:0 16px calc(48px + env(safe-area-inset-bottom));height:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  .wrap{max-width:680px;margin:0 auto;padding:0 16px calc(24px + env(safe-area-inset-bottom));height:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
   header{padding:18px 0 14px;position:sticky;top:0;background:linear-gradient(var(--bg),var(--bg) 72%,rgba(22,17,12,0));z-index:30;}
   .toprow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
   .brand{display:flex;align-items:center;gap:11px;min-width:0;}
@@ -206,6 +206,10 @@ function applyUpdate(){
   [dir=rtl] .srctable td{text-align:right;}
   .srctable a{color:var(--water);word-break:break-word;}
   .ref{display:inline-block;min-width:22px;color:var(--heat);font-weight:700;font-family:var(--mono);}
+  .set-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;}
+  .set-btn{padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;text-align:center;}
+  .lang-btn{padding:11px 14px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;}
+  .lang-active{border-color:var(--heat);background:var(--heat);color:#1a0e00;}
 </style>
 </head>
 <body>
@@ -218,7 +222,6 @@ function applyUpdate(){
         <div><h1 id="t_tag"></h1><div class="tag">iBird Hatching Machine</div></div>
       </div>
       <div class="toggles">
-        <button class="chip" id="langBtn" onclick="toggleLang()">ع</button>
         <button class="chip" onclick="openIncList()" id="incBtn">📦</button>
         <button class="chip" onclick="openInfo()" id="infoBtn">ⓘ</button>
         <button class="chip" onclick="openSettings()" id="settingsBtn">⚙️</button>
@@ -238,7 +241,6 @@ function applyUpdate(){
   </div>
 
   <div id="list"></div>
-  <p class="foot" id="t_foot"></p>
 </div>
 
 <!-- DETAIL -->
@@ -482,14 +484,15 @@ const T={
   stageConflictT:"Stage conflict in this incubator", stageConflictEggMsg:"This egg needs 65–70% RH for hatching, but other eggs sharing this incubator are still drying at a lower setting — raising the whole incubator's humidity now would slow their loss.",
   stageConflictMsg:"{n} egg(s) need 65–70% RH for hatching while {m} other egg(s) here are still in the drying phase at lower humidity — you can't raise the whole incubator's humidity without slowing the others' loss. Best practice: move the hatching egg to a separate hatching container/basket (a deli cup with damp paper towel under a humidity dome works), or boost humidity locally there, instead of changing the shared incubator setting.",
   turnsToday:"Turns today", logTurn:"Log a turn",
-  // info
-  infoTitle:"How it works & sources",
-  // settings
+  // info (now: guide + data)
+  infoTitle:"Guide & Data",
+  // settings (now: language + science info + copyright)
   settingsTitle:"Settings",
-  guideTitle:"App Guide",
-  guideDesc:"Step-by-step walkthrough of every feature.",
+  langSection:"Language", langEn:"English", langAr:"عربي",
+  guideTitle:"App Guide", guideDesc:"Step-by-step walkthrough of every feature.",
   startGuide:"Start guided tour",
-  tourNext:"Next →", tourPrev:"← Back", tourDone:"Get started!", tourSkip:"Skip tour",
+  tourLangTitle:"Choose language", tourLangBody:"Pick your language to continue.",
+  tourNext:"Next →", tourPrev:"‹ Back", tourDone:"Let's go!", tourSkip:"Skip tour",
  },
  ar:{
   tag:"Eggs Tracking",
@@ -575,13 +578,15 @@ const T={
   stageConflictT:"تعارض في مراحل هذه الحاضنة", stageConflictEggMsg:"هذه البيضة تحتاج رطوبة 65–70٪ للفقس، لكن بيضات أخرى تشارك هذه الحاضنة لا تزال في مرحلة التجفيف بإعداد رطوبة أقل — رفع رطوبة الحاضنة كلها الآن سيُبطئ فقدها.",
   stageConflictMsg:"{n} بيضة/بيضات تحتاج رطوبة 65–70٪ للفقس بينما {m} بيضة/بيضات أخرى هنا لا تزال في مرحلة التجفيف برطوبة أقل — لا يمكنك رفع رطوبة الحاضنة كلها دون إبطاء فقدها. الأفضل: نقل البيضة المُقتربة من الفقس إلى وعاء/سلة فقس منفصلة (كوب بلاستيكي مع منديل ورقي مبلّل تحت قبة رطوبة يكفي)، أو رفع الرطوبة محليًا هناك فقط، بدل تغيير إعداد الحاضنة المشتركة.",
   turnsToday:"قلبات اليوم", logTurn:"سجّل تقليبًا",
-  infoTitle:"كيف يعمل والمصادر",
+  // info (now: guide + data)
+  infoTitle:"الدليل والبيانات",
   // settings
   settingsTitle:"الإعدادات",
-  guideTitle:"دليل التطبيق",
-  guideDesc:"شرح خطوة بخطوة لكل ميزة في التطبيق.",
+  langSection:"اللغة", langEn:"English", langAr:"عربي",
+  guideTitle:"دليل التطبيق", guideDesc:"شرح خطوة بخطوة لكل ميزة.",
   startGuide:"ابدأ الجولة الإرشادية",
-  tourNext:"التالي →", tourPrev:"→ السابق", tourDone:"ابدأ الآن!", tourSkip:"تخطّ",
+  tourLangTitle:"اختر اللغة", tourLangBody:"اختر لغتك للمتابعة.",
+  tourNext:"التالي ›", tourPrev:"‹ السابق", tourDone:"لنبدأ!", tourSkip:"تخطّ",
  }
 };
 let lang = localStorage.getItem("drydown.lang") || "en";
@@ -777,12 +782,11 @@ function stLabel(s){ return {ok:t("st_ok"),fast:t("st_fast"),slow:t("st_slow"),w
 /* ============ static UI text ============ */
 function paintChrome(){
   document.documentElement.lang=lang; document.documentElement.dir=isRTL()?"rtl":"ltr";
-  document.getElementById("langBtn").textContent = isRTL()?"EN":"ع";
+  const lb=document.getElementById("langBtn"); if(lb) lb.textContent=isRTL()?"EN":"ع";
   const set=(id,k)=>{const el=document.getElementById(id); if(el) el.textContent=t(k);};
   set("t_tag","tag"); set("t_sub","sub"); set("t_updateMsg","updateMsg"); set("t_updateBtn","updateBtn");
   set("t_sumActive","sumActive"); set("t_sumAlert","sumAlert"); set("t_sumDue","sumDue");
   set("t_newegg","newegg");
-  document.getElementById("t_foot").textContent=t("foot");
   set("t_infoTitle","infoTitle");
   set("t_settingsTitle","settingsTitle");
   // egg modal labels
@@ -1388,14 +1392,34 @@ const INFO_AR=`
 /* ============ settings ============ */
 function renderSettings(){
   document.getElementById("t_settingsTitle").textContent=t("settingsTitle");
+  const body=isRTL()?INFO_AR:INFO_EN;
+  const rows=SOURCES.map(s=>`<tr><td><span class="ref">[${s.n}]</span> ${esc(s.a)}<br><a href="${s.u}" target="_blank" rel="noopener">${s.u}</a></td></tr>`).join("");
   document.getElementById("settingsBody").innerHTML=`
-    <div style="margin-bottom:8px">
-      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">${t("guideTitle")}</div>
-      <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px">
-        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">${t("guideDesc")}</div>
-        <button onclick="openTour()" style="width:100%;padding:12px;border-radius:12px;border:none;background:var(--heat);color:#1a0e00;font-size:15px;font-weight:700;cursor:pointer">🗺️ ${t("startGuide")}</button>
+    <div style="margin-bottom:20px">
+      <div class="set-label">${t("langSection")}</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="setLang('en')" class="lang-btn ${lang==='en'?'lang-active':''}" style="flex:1">🇬🇧 ${t("langEn")}</button>
+        <button onclick="setLang('ar')" class="lang-btn ${lang==='ar'?'lang-active':''}" style="flex:1">🇸🇦 ${t("langAr")}</button>
       </div>
-    </div>`;
+    </div>
+    <div style="margin-bottom:20px">
+      <div class="set-label">${t("dataTitle")}</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="exportData()" class="set-btn" style="flex:1">💾 ${t("exportBtn")}</button>
+        <button onclick="importData()" class="set-btn" style="flex:1">📥 ${t("importBtn")}</button>
+      </div>
+    </div>
+    <div style="margin-bottom:20px">
+      <div class="set-label">${t("infoTitle")}</div>
+      ${body}
+      <table class="srctable"><tbody>${rows}</tbody></table>
+    </div>
+    <p style="text-align:center;font-size:11px;color:var(--muted);margin:16px 0 8px">© iBird Hatching Machine &nbsp;·&nbsp; <a href="https://www.instagram.com/ibirds" target="_blank" rel="noopener" style="color:var(--heat);text-decoration:none">@ibirds</a></p>`;
+}
+function setLang(l){ lang=l; localStorage.setItem("drydown.lang",l); paintChrome(); renderList(); renderSettings();
+  if(document.getElementById("detail").classList.contains("open")&&currentId) openDetail(currentId);
+  if(document.getElementById("incScreen").classList.contains("open")) renderIncList();
+  if(document.getElementById("incDetail").classList.contains("open")&&currentIncId) renderIncDetail(currentIncId);
 }
 function openSettings(){
   renderSettings();
@@ -1447,8 +1471,8 @@ const TOUR_STEPS={
   ]
 };
 let tourIdx=0;
-function openTour(){
-  tourIdx=0;
+function openTour(firstTime){
+  tourIdx=firstTime?-1:0;
   renderTourStep();
   document.getElementById("tourOverlay").style.display="flex";
   document.body.style.overflow="hidden";
@@ -1461,12 +1485,33 @@ function closeTour(){
 function tourStep(d){
   const steps=TOUR_STEPS[lang]||TOUR_STEPS.en;
   const next=tourIdx+d;
+  if(tourIdx===-1&&d===1){tourIdx=0;renderTourStep();return;}
   if(next<0||next>=steps.length) return;
   tourIdx=next;
   renderTourStep();
 }
+function setTourLang(l){
+  lang=l; localStorage.setItem("drydown.lang",l); paintChrome(); renderList(); renderTourStep();
+}
 function renderTourStep(){
   const steps=TOUR_STEPS[lang]||TOUR_STEPS.en;
+  // Language picker step
+  if(tourIdx===-1){
+    document.getElementById("tourIcon").textContent="🌐";
+    document.getElementById("tourTitle").textContent=t("tourLangTitle");
+    document.getElementById("tourBody").innerHTML=t("tourLangBody");
+    const ex=document.getElementById("tourExample");
+    ex.style.display="block";
+    ex.innerHTML=`<div style="display:flex;gap:10px;margin-top:4px">
+      <button onclick="setTourLang('en')" style="flex:1;padding:12px;border-radius:12px;border:2px solid ${lang==='en'?'var(--heat)':'var(--line)'};background:${lang==='en'?'var(--heat)':'var(--panel)'};color:${lang==='en'?'#1a0e00':'var(--ink)'};font-size:15px;font-weight:700;cursor:pointer">🇬🇧 English</button>
+      <button onclick="setTourLang('ar')" style="flex:1;padding:12px;border-radius:12px;border:2px solid ${lang==='ar'?'var(--heat)':'var(--line)'};background:${lang==='ar'?'var(--heat)':'var(--panel)'};color:${lang==='ar'?'#1a0e00':'var(--ink)'};font-size:15px;font-weight:700;cursor:pointer">🇸🇦 عربي</button>
+    </div>`;
+    document.getElementById("tourDots").innerHTML="";
+    document.getElementById("tourPrevBtn").style.display="none";
+    const nb=document.getElementById("tourNextBtn"); nb.textContent=t("tourNext"); nb.onclick=()=>tourStep(1);
+    document.getElementById("tourSkipBtn").textContent=t("tourSkip"); document.getElementById("tourSkipBtn").style.display="block";
+    return;
+  }
   const s=steps[tourIdx];
   const last=tourIdx===steps.length-1;
   document.getElementById("tourIcon").textContent=s.icon;
@@ -1477,14 +1522,11 @@ function renderTourStep(){
   const dots=steps.map((_,i)=>`<div style="width:${i===tourIdx?20:6}px;height:6px;border-radius:3px;transition:width .2s;background:${i===tourIdx?"var(--heat)":"var(--line)"}"></div>`).join("");
   document.getElementById("tourDots").innerHTML=dots;
   const prevBtn=document.getElementById("tourPrevBtn");
-  prevBtn.textContent=t("tourPrev");
-  prevBtn.style.display=tourIdx===0?"none":"block";
+  prevBtn.textContent=t("tourPrev"); prevBtn.style.display=tourIdx===0?"none":"block";
   const nextBtn=document.getElementById("tourNextBtn");
-  nextBtn.textContent=last?t("tourDone"):t("tourNext");
-  nextBtn.onclick=last?closeTour:()=>tourStep(1);
+  nextBtn.textContent=last?t("tourDone"):t("tourNext"); nextBtn.onclick=last?closeTour:()=>tourStep(1);
   const skipBtn=document.getElementById("tourSkipBtn");
-  skipBtn.textContent=t("tourSkip");
-  skipBtn.style.display=last?"none":"block";
+  skipBtn.textContent=t("tourSkip"); skipBtn.style.display=last?"none":"block";
 }
 
 /* ============ export / import ============ */
@@ -1523,21 +1565,16 @@ function importData(){
 }
 
 function renderInfo(){
-  const body=isRTL()?INFO_AR:INFO_EN;
-  const rows=SOURCES.map(s=>`<tr><td><span class="ref">[${s.n}]</span> ${esc(s.a)}<br><a href="${s.u}" target="_blank" rel="noopener">${s.u}</a></td></tr>`).join("");
-  const dataSec=`<div style="margin:0 0 24px;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:14px">
-    <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">${t("dataTitle")}</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button onclick="exportData()" style="flex:1;min-width:120px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">💾 ${t("exportBtn")}</button>
-      <button onclick="importData()" style="flex:1;min-width:120px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">📥 ${t("importBtn")}</button>
-    </div>
-  </div>`;
-  document.getElementById("infoBody").innerHTML=dataSec+body+`<table class="srctable"><tbody>${rows}</tbody></table>
-    <p class="foot" style="margin-top:20px">iBird Eggs · offline tool · data on-device only</p>`;
   document.getElementById("t_infoTitle").textContent=t("infoTitle");
+  document.getElementById("infoBody").innerHTML=`
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:8px">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">${t("guideDesc")}</div>
+      <button onclick="closeThen(closeInfo,openTour)" style="width:100%;padding:12px;border-radius:12px;border:none;background:var(--heat);color:#1a0e00;font-size:15px;font-weight:700;cursor:pointer">🗺️ ${t("startGuide")}</button>
+    </div>`;
 }
 function openInfo(){ renderInfo(); document.getElementById("infoScreen").classList.add("open"); document.body.style.overflow="hidden"; }
 function closeInfo(){ document.getElementById("infoScreen").classList.remove("open"); document.body.style.overflow=""; }
+function closeThen(closeFn,openFn){ closeFn(); setTimeout(openFn,120); }
 
 /* ============ misc ============ */
 function closeModal(id){ document.getElementById(id).classList.remove("open"); }
@@ -1577,15 +1614,12 @@ function enableScreenBackSwipe(screenEl,closeFn){
 }
 enableScreenBackSwipe(document.getElementById("detail"),closeDetail);
 enableScreenBackSwipe(document.getElementById("infoScreen"),closeInfo);
+enableScreenBackSwipe(document.getElementById("settingsScreen"),closeSettings);
 enableScreenBackSwipe(document.getElementById("incScreen"),closeIncList);
 enableScreenBackSwipe(document.getElementById("incDetail"),closeIncDetail);
 
 paintChrome(); renderList();
 </script>
-<div style="position:fixed;bottom:0;left:0;right:0;z-index:40;background:var(--bg);border-top:1px solid var(--line);padding:8px 16px calc(8px + env(safe-area-inset-bottom));text-align:center;font-size:11px;color:var(--muted);">
-  © iBird Hatching Machine &nbsp;·&nbsp; <a href="https://www.instagram.com/ibirds" target="_blank" rel="noopener" style="color:var(--heat);text-decoration:none">@ibirds</a>
-</div>
-
 <!-- GUIDED TOUR -->
 <div id="tourOverlay" style="display:none;position:fixed;inset:0;z-index:800;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.7);">
   <div style="background:var(--bg);border-radius:24px;width:100%;max-width:380px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.5);">
