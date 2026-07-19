@@ -6,9 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Eggs Tracking">
+<meta name="apple-mobile-web-app-title" content="iBird Hatching">
 <meta name="theme-color" content="#16110c">
-<title>Eggs Tracking</title>
+<title>iBird Hatching Machine</title>
 <script>
 /* App icon — chick hatching from egg, matching the iBird logo.
    SVG for browser favicon; drawn onto canvas for iOS touch icon. */
@@ -264,7 +264,7 @@
             <ellipse cx="50" cy="88" rx="24" ry="3" fill="#000" opacity="0.28"/>
           </svg>
         </div>
-        <div><h1>Eggs Tracking</h1><div class="tag" id="t_tag"></div></div>
+        <div><h1>iBird Hatching Machine</h1><div class="tag" id="t_tag"></div></div>
       </div>
       <div class="toggles">
         <button class="chip" id="langBtn" onclick="toggleLang()">ع</button>
@@ -510,7 +510,7 @@ const T={
   incNoEggs:"No eggs assigned yet.",
   saveInc:"Save incubator", delInc:"Delete this incubator", confirmDelInc:"Delete this incubator? Assigned eggs become unassigned.",
   incAdded:"Incubator added", incUpdated:"Incubator updated", incDeleted:"Incubator deleted",
-  noInc:"— unassigned —", incubatorL:"Incubator",
+  noInc:"— unassigned —", incubatorL:"Incubator", changeInc:"Change",
   idealTempL:"Ideal temp", idealRhL:"Ideal RH", matchL:"Match",
   avgMatch:"Overall match", avgMatchMsg:"Eggs here average <b>{p}%</b> match to their own ideal temp/RH. This is a settings-fit estimate, not a validated hatch-rate predictor — each egg's weigh-in trend is still the real signal.",
   noEggsAssigned:"Assign eggs to this incubator to see a match estimate.",
@@ -594,7 +594,7 @@ const T={
   incNoEggs:"لا بيضات مخصّصة بعد.",
   saveInc:"حفظ الحاضنة", delInc:"حذف هذه الحاضنة", confirmDelInc:"حذف هذه الحاضنة؟ ستصبح البيضات المخصّصة لها غير مخصّصة.",
   incAdded:"أُضيفت الحاضنة", incUpdated:"حُدّثت الحاضنة", incDeleted:"حُذفت الحاضنة",
-  noInc:"— غير مخصّصة —", incubatorL:"الحاضنة",
+  noInc:"— غير مخصّصة —", incubatorL:"الحاضنة", changeInc:"تغيير",
   idealTempL:"الحرارة المثالية", idealRhL:"الرطوبة المثالية", matchL:"التوافق",
   avgMatch:"التوافق العام", avgMatchMsg:"بيضات هذه الحاضنة تحقق توافقًا متوسطه <b>{p}٪</b> مع حرارتها/رطوبتها المثالية الفردية. هذا تقدير لمدى توافق الإعدادات، لا معدل فقس مُثبَت — يبقى اتجاه وزن كل بيضة هو المؤشر الحقيقي.",
   noEggsAssigned:"خصّص بيضات لهذه الحاضنة لرؤية تقدير التوافق.",
@@ -733,9 +733,13 @@ function scheduleDays(e){
 function nextWeighDay(e){
   const ms=[...e.meas].map(m=>dayDiff(e.setDate,m.date));
   const last=ms.length?Math.max(...ms):-1;
+  const elapsed=dayDiff(e.setDate,today());
   const sched=scheduleDays(e);
-  for(const d of sched){ if(d>last) return d; }
-  return null;
+  const unmeasured=sched.filter(d=>d>last);
+  if(!unmeasured.length) return null;
+  // if any are overdue return the most recent (closest to today), else first upcoming
+  const overdue=unmeasured.filter(d=>d<=elapsed);
+  return overdue.length ? overdue[overdue.length-1] : unmeasured[0];
 }
 
 function analyse(e){
@@ -870,6 +874,11 @@ function closeDetail(){ document.getElementById("detail").classList.remove("open
 
 function incLineHTML(e,a){
   if(!e.incubatorId) return "";
+  const changeBtn=`<button onclick="openEgg('${e.id}')" style="margin-inline-start:8px;font-size:11px;color:var(--heat);background:none;padding:2px 6px;border:1px solid var(--heat);border-radius:6px">${t("changeInc")}</button>`;
+  if(!e.incubatorId||!incubators.length){
+    if(!incubators.length) return "";
+    return `<div class="timeline" style="margin-top:10px">📦 ${t("noInc")} ${changeBtn}</div>`;
+  }
   const inc=incubators.find(i=>i.id===e.incubatorId); if(!inc) return "";
   const fs=fitScore(e,a,inc);
   let conflictNote="";
@@ -878,7 +887,7 @@ function incLineHTML(e,a){
     const stillDrying=assigned.some(x=>x.id!==e.id&&analyse(x).status!=="lockdown");
     if(stillDrying) conflictNote=`<div style="margin-top:6px;color:var(--fast);font-size:12.5px">⚠️ ${t("stageConflictEggMsg")}</div>`;
   }
-  return `<div class="timeline" style="margin-top:10px">📦 <b>${esc(inc.name)}</b> — ${inc.temp.toFixed(1)}°C / ${inc.rh}% RH${fs!=null?` · ${t("matchL")}: <b>${fs}%</b>`:""}${conflictNote}</div>`;
+  return `<div class="timeline" style="margin-top:10px">📦 <b>${esc(inc.name)}</b> — ${inc.temp.toFixed(1)}°C / ${inc.rh}% RH${fs!=null?` · ${t("matchL")}: <b>${fs}%</b>`:""}${changeBtn}${conflictNote}</div>`;
 }
 function tempBlock(e,a){
   const tg=e.temp||37.5;
