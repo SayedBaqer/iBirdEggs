@@ -294,7 +294,7 @@
     <label id="l_species"></label>
     <select id="f_species" onchange="applySpecies()"></select>
     <div class="two">
-      <div><label id="l_fresh"></label><input id="f_fresh" type="number" step="0.01" inputmode="decimal" placeholder="16.0"></div>
+      <div><label id="l_fresh"></label><input id="f_fresh" type="text" inputmode="decimal" placeholder="16.0" onclick="this.dataset.prev=this.value;this.value=''"></div>
       <div><label id="l_date"></label><input id="f_date" type="date"></div>
     </div>
     <div class="two">
@@ -1064,7 +1064,7 @@ function readSched(){
   return out;
 }
 function saveEgg(){
-  const fresh=parseFloat(document.getElementById("f_fresh").value);
+  const fresh=parseFloat(normalizeNum(document.getElementById("f_fresh").value));
   const days=parseInt(document.getElementById("f_days").value);
   if(!fresh||fresh<=0){ toast(t("needFresh")); return; }
   if(!days||days<=0){ toast(t("needDays")); return; }
