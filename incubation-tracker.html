@@ -861,7 +861,7 @@ function renderList(){
             <div style="display:flex;align-items:center;gap:6px">
               <div class="pill ${cls}">${stLabel(a.status)}</div>
               <button class="delrow" onclick="event.stopPropagation();openEgg('${e.id}')" title="${t('editTip')}" style="color:var(--water)">✎</button>
-              <button class="delrow" onclick="event.stopPropagation();openMeas('${e.id}')" title="${t('addWeightTip')}" style="color:var(--heat)">⚖</button>
+              <button class="delrow" onclick="event.stopPropagation();openMeas('${e.id}')" title="${t('addWeightTip')}" style="color:var(--heat);font-size:15px">⚖</button>
               <button class="delrow" onclick="event.stopPropagation();quickDeleteEgg('${e.id}')" title="Delete">✕</button>
             </div>
             ${dueLine}
@@ -1132,7 +1132,7 @@ function pickCloneEgg(){
   const names=active.map(e=>`• ${e.name||spName(e.species)}`).join("\n");
   const pick=prompt((isRTL()?"اختر رقم البيضة للنسخ:\n":"Pick egg number to clone:\n")+active.map((e,i)=>`${i+1}. ${e.name||spName(e.species)}`).join("\n"));
   if(!pick) return;
-  const idx=parseInt(pick,10)-1;
+  const idx=parseInt(normalizeNum(pick),10)-1;
   if(idx>=0&&idx<active.length) cloneEgg(active[idx].id);
 }
 function cloneEgg(id){
