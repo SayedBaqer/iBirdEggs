@@ -89,11 +89,14 @@ function applyUpdate(){
   .sub{font-size:12px;color:var(--muted);margin-top:9px;line-height:1.5;}
 
   .summary{display:flex;gap:8px;margin:16px 0 4px;}
-  .sumcard{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:11px 12px;}
+  .sumcard{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:11px 12px;cursor:pointer;transition:border-color .15s;}
+  .sumcard:active{opacity:.8;}
   .sumcard .n{font-family:var(--mono);font-size:23px;font-weight:600;line-height:1;}
   .sumcard .l{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:6px;}
   [dir=rtl] .sumcard .l{letter-spacing:0;}
   .sumcard.alert .n{color:var(--fast);}
+  .sumcard.sel{border-color:var(--heat);box-shadow:0 0 0 2px var(--heat);}
+  .sumcard.alert.sel{border-color:var(--fast);box-shadow:0 0 0 2px var(--fast);}
 
   button{font-family:var(--sans);cursor:pointer;border:none;}
   .row-actions{display:flex;gap:9px;margin:16px 0 6px;flex-wrap:wrap;}
@@ -243,9 +246,12 @@ function applyUpdate(){
   </header>
 
   <div class="summary">
-    <div class="sumcard"><div class="n" id="sumActive">0</div><div class="l" id="t_sumActive"></div></div>
-    <div class="sumcard alert"><div class="n" id="sumAlert">0</div><div class="l" id="t_sumAlert"></div></div>
-    <div class="sumcard"><div class="n" id="sumDue">0</div><div class="l" id="t_sumDue"></div></div>
+    <div class="sumcard" id="sc_active" onclick="setListFilter('active')"><div class="n" id="sumActive">0</div><div class="l" id="t_sumActive"></div></div>
+    <div class="sumcard alert" id="sc_alert" onclick="setListFilter('alert')"><div class="n" id="sumAlert">0</div><div class="l" id="t_sumAlert"></div></div>
+    <div class="sumcard" id="sc_due" onclick="setListFilter('due')"><div class="n" id="sumDue">0</div><div class="l" id="t_sumDue"></div></div>
+  </div>
+  <div id="filterBar" style="display:none;font-size:12px;color:var(--muted);text-align:center;margin:4px 0 -4px">
+    <span id="filterLabel"></span> &nbsp;·&nbsp; <span onclick="setListFilter(null)" style="color:var(--heat);cursor:pointer;font-weight:600" id="t_clearFilter"></span>
   </div>
 
   <div class="row-actions">
@@ -414,7 +420,7 @@ const T={
   tag:"Eggs Track",
   updateMsg:"New version available", updateBtn:"Refresh",
   sub:"Weigh each egg, plot it against the ideal 15% loss line, and let the verdict tell you which way to move humidity (and when to touch temperature). Built for parrots & birds.",
-  sumActive:"Incubating", sumAlert:"Need adjust", sumDue:"Weigh today",
+  sumActive:"Incubating", sumAlert:"Need adjust", sumDue:"Weigh today", clearFilter:"Show all", filterEmpty:"No eggs in this group",
   newegg:"New egg",
   foot:"Weight loss = moisture loss. Target ≈ 15% (±3%) of fresh weight by internal pip, then lockdown. Data stays on this device only.",
   emptyT:"No eggs yet", emptyB:"Tap “New egg”, enter the fresh weight on setting day, then weigh on your chosen schedule.",
@@ -512,7 +518,7 @@ const T={
   tag:"Eggs Track",
   updateMsg:"يوجد إصدار جديد", updateBtn:"تحديث",
   sub:"زِن كل بيضة وقارنها بخط الفقدان المثالي (15٪)، ودَع التقييم يخبرك باتجاه ضبط الرطوبة (ومتى تلمس الحرارة). مُصمَّم للببغاوات والطيور.",
-  sumActive:"تحت التحضين", sumAlert:"تحتاج ضبطًا", sumDue:"وزن اليوم",
+  sumActive:"تحت التحضين", sumAlert:"تحتاج ضبطًا", sumDue:"وزن اليوم", clearFilter:"عرض الكل", filterEmpty:"لا بيضات في هذه المجموعة",
   newegg:"بيضة جديدة",
   foot:"فقدان الوزن = فقدان الرطوبة. الهدف ≈ 15٪ (±3٪) من الوزن الطازج حتى النقر الداخلي، ثم الإغلاق. تبقى البيانات على هذا الجهاز فقط.",
   emptyT:"لا توجد بيضات بعد", emptyB:"اضغط «بيضة جديدة»، أدخل الوزن الطازج يوم الوضع، ثم زِنها حسب الجدول الذي تختاره.",
@@ -835,17 +841,35 @@ function toggleLang(){ lang=isRTL()?"en":"ar"; localStorage.setItem("drydown.lan
 }
 
 /* ============ list ============ */
+let listFilter=null;
+function setListFilter(f){
+  listFilter=(listFilter===f)?null:f;
+  renderList();
+}
 function renderList(){
   const list=document.getElementById("list");
   let active=0,alert=0,due=0;
+  // Build full analysis first to get counts
+  const analysed=eggs.map(e=>({e,a:analyse(e)}));
+  analysed.forEach(({e,a})=>{
+    if(a.elapsed<=e.days+2) active++;
+    if(a.status==="fast"||a.status==="slow") alert++;
+    if(a.due) due++;
+  });
+  // Apply filter
+  const visible=listFilter?analysed.filter(({e,a})=>{
+    if(listFilter==="alert") return a.status==="fast"||a.status==="slow";
+    if(listFilter==="due")   return a.due;
+    if(listFilter==="active") return a.elapsed<=e.days+2;
+    return true;
+  }):analysed;
   if(!eggs.length){
     list.innerHTML=`<div class="empty"><b>${t("emptyT")}</b>${t("emptyB")}</div>`;
+  } else if(!visible.length){
+    list.innerHTML=`<div class="empty" style="padding:28px 0"><span style="font-size:28px">✓</span><br><b style="display:block;margin-top:8px">${t("filterEmpty")||"No eggs in this group"}</b></div>`;
   } else {
-    list.innerHTML=eggs.map(e=>{
-      const a=analyse(e), cls=STC[a.status];
-      if(a.elapsed<=e.days+2) active++;
-      if(a.status==="fast"||a.status==="slow") alert++;
-      if(a.due) due++;
+    list.innerHTML=visible.map(({e,a})=>{
+      const cls=STC[a.status];
       const pct=Math.max(0,Math.min(100,a.elapsed/e.days*100));
       const curW=a.last?a.last.weight.toFixed(2)+"g":"—", curL=a.last?a.aLoss.toFixed(1)+"%":"—";
       let dueLine="";
@@ -880,6 +904,21 @@ function renderList(){
   document.getElementById("sumActive").textContent=active;
   document.getElementById("sumAlert").textContent=alert;
   document.getElementById("sumDue").textContent=due;
+  // Update selected card highlight
+  ["active","alert","due"].forEach(f=>{
+    const el=document.getElementById("sc_"+f);
+    if(el) el.classList.toggle("sel",listFilter===f);
+  });
+  // Filter bar
+  const fb=document.getElementById("filterBar");
+  if(fb){
+    fb.style.display=listFilter?"block":"none";
+    if(listFilter){
+      const lbl={active:t("sumActive"),alert:t("sumAlert"),due:t("sumDue")}[listFilter];
+      document.getElementById("filterLabel").textContent=lbl+" ("+visible.length+")";
+      document.getElementById("t_clearFilter").textContent=t("clearFilter");
+    }
+  }
   const cb=document.getElementById("cloneListBtn"); if(cb) cb.style.display=eggs.length?"":"none";
 }
 function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
