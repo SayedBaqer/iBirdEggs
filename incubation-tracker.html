@@ -250,6 +250,7 @@ function applyUpdate(){
 
   <div class="row-actions">
     <button class="btn" onclick="openEgg()"><span style="font-size:17px;line-height:0">＋</span> <span id="t_newegg"></span></button>
+    <button class="btn ghost" id="cloneListBtn" onclick="pickCloneEgg()" title="${t('cloneTip')}"><span id="t_cloneBtn"></span></button>
   </div>
 
   <div id="list"></div>
@@ -459,7 +460,8 @@ const T={
   status:"status", verdictDay:"day {d}",
   // egg modal
   eggNew:"New egg", eggEdit:"Edit egg", eggClone:"New egg — same settings",
-  cloneIcon:"⎘", cloneTip:"Clone egg (same settings, new weight)", editTip:"Edit egg",
+  cloneIcon:"⎘", cloneTip:"Clone egg (same settings, new weight)", editTip:"Edit egg", addWeightTip:"Add weigh-in",
+  cloneBtn:"⎘ Clone",
   dataTitle:"Data", exportBtn:"Export data", importBtn:"Import data",
   importedMsg:"{e} egg(s), {i} incubator(s) added.",
   eggHint:"Pick a species to auto-fill incubation days & target loss — override anything.",
@@ -555,7 +557,8 @@ const T={
   tLockSame:"<b>البقاء في الحاضنة:</b> حافظ على الحرارة ≈ {h}°م — نفس حرارة التحضين، لا تخفضها لعدم وجود مرحلة فقّاسة منفصلة. ارفع الرطوبة إلى 65–70٪ وأوقف التقليب.",
   status:"الحالة", verdictDay:"اليوم {d}",
   eggNew:"بيضة جديدة", eggEdit:"تعديل البيضة", eggClone:"بيضة جديدة — نفس الإعدادات",
-  cloneIcon:"⎘", cloneTip:"نسخ البيضة (نفس الإعدادات، وزن جديد)", editTip:"تعديل البيضة",
+  cloneIcon:"⎘", cloneTip:"نسخ البيضة (نفس الإعدادات، وزن جديد)", editTip:"تعديل البيضة", addWeightTip:"إضافة وزن",
+  cloneBtn:"⎘ نسخ",
   dataTitle:"البيانات", exportBtn:"تصدير البيانات", importBtn:"استيراد البيانات",
   importedMsg:"تمت إضافة {e} بيضة و{i} حاضنة.",
   eggHint:"اختر النوع لملء أيام التحضين ونسبة الفقد تلقائيًا — يمكنك تعديل أي قيمة.",
@@ -798,7 +801,7 @@ function paintChrome(){
   const set=(id,k)=>{const el=document.getElementById(id); if(el) el.textContent=t(k);};
   set("t_tag","tag"); set("t_sub","sub"); set("t_updateMsg","updateMsg"); set("t_updateBtn","updateBtn");
   set("t_sumActive","sumActive"); set("t_sumAlert","sumAlert"); set("t_sumDue","sumDue");
-  set("t_newegg","newegg");
+  set("t_newegg","newegg"); set("t_cloneBtn","cloneBtn");
   set("t_infoTitle","infoTitle");
   set("t_settingsTitle","settingsTitle");
   // egg modal labels
@@ -858,7 +861,7 @@ function renderList(){
             <div style="display:flex;align-items:center;gap:6px">
               <div class="pill ${cls}">${stLabel(a.status)}</div>
               <button class="delrow" onclick="event.stopPropagation();openEgg('${e.id}')" title="${t('editTip')}" style="color:var(--water)">✎</button>
-              <button class="delrow" onclick="event.stopPropagation();cloneEgg('${e.id}')" title="${t('cloneTip')}" style="color:var(--heat)">⊕</button>
+              <button class="delrow" onclick="event.stopPropagation();openMeas('${e.id}')" title="${t('addWeightTip')}" style="color:var(--heat)">⚖</button>
               <button class="delrow" onclick="event.stopPropagation();quickDeleteEgg('${e.id}')" title="Delete">✕</button>
             </div>
             ${dueLine}
@@ -877,6 +880,7 @@ function renderList(){
   document.getElementById("sumActive").textContent=active;
   document.getElementById("sumAlert").textContent=alert;
   document.getElementById("sumDue").textContent=due;
+  const cb=document.getElementById("cloneListBtn"); if(cb) cb.style.display=eggs.length?"":"none";
 }
 function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
@@ -1119,6 +1123,17 @@ function openEgg(id){
   }
   setSched(schedDraft.mode);
   document.getElementById("eggModal").classList.add("open");
+}
+function pickCloneEgg(){
+  const active=eggs.filter(e=>e);
+  if(!active.length){toast(t("noEggsYet")||"No eggs yet.");return;}
+  if(active.length===1){cloneEgg(active[0].id);return;}
+  // Build a quick pick list in a toast-style prompt
+  const names=active.map(e=>`• ${e.name||spName(e.species)}`).join("\n");
+  const pick=prompt((isRTL()?"اختر رقم البيضة للنسخ:\n":"Pick egg number to clone:\n")+active.map((e,i)=>`${i+1}. ${e.name||spName(e.species)}`).join("\n"));
+  if(!pick) return;
+  const idx=parseInt(pick,10)-1;
+  if(idx>=0&&idx<active.length) cloneEgg(active[idx].id);
 }
 function cloneEgg(id){
   const src=eggs.find(x=>x.id===id); if(!src) return;
